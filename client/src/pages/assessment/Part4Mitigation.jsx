@@ -68,19 +68,19 @@ export default function Part4Mitigation() {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-6">Part 4: Tenancy Match Challenge Mitigation</h3>
+    <div className="glass rounded-xl p-6">
+      <h3 className="text-lg font-semibold text-slate-200 mb-6">Part 4: Tenancy Match Challenge Mitigation</h3>
 
       <div className="space-y-6 max-w-2xl">
         {fields.map((field) => (
           <fieldset key={field.key}>
-            <legend className="text-sm font-medium text-gray-700 mb-2">
+            <legend className="text-sm font-medium text-slate-300 mb-2">
               {field.label} <span className="text-red-500">*</span>
               <Tooltip text={field.tip} />
             </legend>
             <div className="space-y-2">
               {field.options.map((opt) => (
-                <label key={opt} className="flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer">
+                <label key={opt} className="flex items-center gap-3 p-2 rounded hover:bg-white/5 cursor-pointer">
                   <input
                     type="radio"
                     name={field.key}
@@ -88,9 +88,9 @@ export default function Part4Mitigation() {
                     checked={data[field.key] === opt}
                     onChange={(e) => update(field.key, e.target.value)}
                     disabled={isLocked}
-                    className="w-4 h-4 text-blue-600"
+                    className="w-4 h-4 text-cyan-400"
                   />
-                  <span className="text-sm text-gray-700">{opt}</span>
+                  <span className="text-sm text-slate-300">{opt}</span>
                 </label>
               ))}
             </div>
@@ -98,7 +98,7 @@ export default function Part4Mitigation() {
         ))}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-300 mb-1">
             Mitigation & Protective Factors Summary
             <Tooltip text="Summarize the mitigating and protective factors that may reduce tenancy suitability challenges" />
           </label>
@@ -107,13 +107,13 @@ export default function Part4Mitigation() {
             onChange={(e) => update('mitigationSummary', e.target.value)}
             disabled={isLocked}
             rows="4"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            className="w-full px-3 py-2 rounded-lg input-glass"
             placeholder="Describe mitigating factors..."
           />
         </div>
 
         <fieldset>
-          <legend className="text-sm font-medium text-gray-700 mb-2">
+          <legend className="text-sm font-medium text-slate-300 mb-2">
             Residual Suitability Challenge Assessment <span className="text-red-500">*</span>
             <Tooltip text="After considering mitigation factors, rate the residual challenge level. This should reflect challenges remaining after mitigation." />
           </legend>
@@ -121,10 +121,10 @@ export default function Part4Mitigation() {
             {['High', 'Medium', 'Low'].map((level) => (
               <label key={level} className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer ${
                 data.residualChallengeRating === level
-                  ? level === 'High' ? 'bg-red-50 border-red-300 text-red-700'
-                    : level === 'Medium' ? 'bg-yellow-50 border-yellow-300 text-yellow-700'
-                    : 'bg-green-50 border-green-300 text-green-700'
-                  : 'border-gray-300 hover:bg-gray-50'
+                  ? level === 'High' ? 'bg-red-500/20 border-red-500/40 text-red-400'
+                    : level === 'Medium' ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400'
+                    : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                  : 'border-white/15 hover:bg-white/5'
               }`}>
                 <input
                   type="radio"
@@ -143,14 +143,14 @@ export default function Part4Mitigation() {
       </div>
 
       {!isLocked && (
-        <div className="flex items-center gap-3 mt-8 pt-6 border-t border-gray-200">
-          <button onClick={() => navigate(`/assessment/${assessment.id}/3`)} className="flex items-center gap-2 px-4 py-2.5 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+        <div className="flex items-center gap-3 mt-8 pt-6 border-t border-white/10">
+          <button onClick={() => navigate(`/assessment/${assessment.id}/3`)} className="flex items-center gap-2 px-4 py-2.5 btn-ghost rounded-lg">
             <ArrowLeft size={16} /> Back
           </button>
-          <button onClick={() => handleSave(true)} disabled={saving} className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+          <button onClick={() => handleSave(true)} disabled={saving} className="flex items-center gap-2 px-6 py-2.5 btn-neon rounded-lg disabled:opacity-50">
             Save & Continue <ArrowRight size={16} />
           </button>
-          <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center gap-2 px-4 py-2.5 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+          <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center gap-2 px-4 py-2.5 btn-ghost rounded-lg disabled:opacity-50">
             <Save size={16} /> Save Draft
           </button>
         </div>

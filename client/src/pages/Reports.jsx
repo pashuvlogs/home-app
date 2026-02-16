@@ -37,7 +37,7 @@ export default function Reports() {
     window.open('/api/reports/export', '_blank');
   }
 
-  if (loading) return <div className="text-center py-8 text-gray-500">Loading reports...</div>;
+  if (loading) return <div className="text-center py-8 text-slate-500">Loading reports...</div>;
 
   const statusData = (summary?.byStatus || []).map((s) => ({
     name: s.status,
@@ -54,13 +54,13 @@ export default function Reports() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-slate-200 flex items-center gap-2">
           <BarChart3 size={24} />
           Reports & Analytics
         </h2>
         <button
           onClick={exportCSV}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800"
+          className="flex items-center gap-2 px-4 py-2 btn-ghost rounded-lg"
         >
           <Download size={16} /> Export CSV
         </button>
@@ -68,15 +68,15 @@ export default function Reports() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border p-4">
-          <p className="text-sm text-gray-500">Total Assessments</p>
-          <p className="text-3xl font-bold text-gray-900">{summary?.total || 0}</p>
+        <div className="glass rounded-xl p-4">
+          <p className="text-sm text-slate-500">Total Assessments</p>
+          <p className="text-3xl font-bold text-slate-200">{summary?.total || 0}</p>
         </div>
         {['High', 'Medium', 'Low'].map((level) => {
           const count = riskData.find((r) => r.name === level)?.value || 0;
           return (
-            <div key={level} className="bg-white rounded-lg border p-4">
-              <p className="text-sm text-gray-500">{level} Risk</p>
+            <div key={level} className="glass rounded-xl p-4">
+              <p className="text-sm text-slate-500">{level} Risk</p>
               <p className="text-3xl font-bold" style={{ color: riskColors[level] }}>{count}</p>
             </div>
           );
@@ -85,34 +85,34 @@ export default function Reports() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Assessment Trends */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <div className="glass rounded-xl p-6">
+          <h3 className="font-semibold text-slate-200 mb-4 flex items-center gap-2">
             <TrendingUp size={18} /> Assessment Trends
           </h3>
           {trends.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={trends}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" fontSize={12} />
-                <YAxis fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="month" fontSize={12} tick={{ fill: '#94a3b8' }} />
+                <YAxis fontSize={12} tick={{ fill: '#94a3b8' }} />
                 <RechartsTooltip />
                 <Line type="monotone" dataKey="count" stroke="#3B82F6" strokeWidth={2} name="Assessments" />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-gray-500 text-center py-8">No trend data yet</p>
+            <p className="text-slate-500 text-center py-8">No trend data yet</p>
           )}
         </div>
 
         {/* Risk Distribution */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="font-semibold text-gray-800 mb-4">Risk Level Distribution</h3>
+        <div className="glass rounded-xl p-6">
+          <h3 className="font-semibold text-slate-200 mb-4">Risk Level Distribution</h3>
           {riskData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={riskData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" fontSize={12} />
-                <YAxis fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="name" fontSize={12} tick={{ fill: '#94a3b8' }} />
+                <YAxis fontSize={12} tick={{ fill: '#94a3b8' }} />
                 <RechartsTooltip />
                 <Bar dataKey="value" name="Count">
                   {riskData.map((entry) => (
@@ -122,13 +122,13 @@ export default function Reports() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-gray-500 text-center py-8">No risk data yet</p>
+            <p className="text-slate-500 text-center py-8">No risk data yet</p>
           )}
         </div>
 
         {/* Status Distribution */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="font-semibold text-gray-800 mb-4">Status Distribution</h3>
+        <div className="glass rounded-xl p-6">
+          <h3 className="font-semibold text-slate-200 mb-4">Status Distribution</h3>
           {statusData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -141,38 +141,38 @@ export default function Reports() {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-gray-500 text-center py-8">No status data yet</p>
+            <p className="text-slate-500 text-center py-8">No status data yet</p>
           )}
         </div>
 
         {/* Override Stats */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <div className="glass rounded-xl p-6">
+          <h3 className="font-semibold text-slate-200 mb-4 flex items-center gap-2">
             <AlertTriangle size={18} /> Professional Judgment Overrides
           </h3>
           {overrides && (
             <div>
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{overrides.total}</p>
-                  <p className="text-xs text-gray-500">Total</p>
+                  <p className="text-2xl font-bold text-slate-200">{overrides.total}</p>
+                  <p className="text-xs text-slate-500">Total</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-purple-600">{overrides.withOverride}</p>
-                  <p className="text-xs text-gray-500">With Override</p>
+                  <p className="text-2xl font-bold text-purple-400">{overrides.withOverride}</p>
+                  <p className="text-xs text-slate-500">With Override</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-orange-600">{overrides.overrideRate}%</p>
-                  <p className="text-xs text-gray-500">Override Rate</p>
+                  <p className="text-2xl font-bold text-orange-400">{overrides.overrideRate}%</p>
+                  <p className="text-xs text-slate-500">Override Rate</p>
                 </div>
               </div>
               {overrides.overrides?.length > 0 && (
-                <div className="border-t pt-3 space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Recent Overrides:</p>
+                <div className="border-t border-white/10 pt-3 space-y-2">
+                  <p className="text-sm font-medium text-slate-300">Recent Overrides:</p>
                   {overrides.overrides.slice(0, 5).map((o) => (
-                    <div key={o.id} className="text-sm text-gray-600">
-                      <span className="font-medium">{o.applicantName}</span> - {o.assessor?.fullName}
-                      <p className="text-xs text-gray-400">
+                    <div key={o.id} className="text-sm text-slate-400">
+                      <span className="font-medium text-slate-300">{o.applicantName}</span> - {o.assessor?.fullName}
+                      <p className="text-xs text-slate-500">
                         {o.professionalJudgementOverride?.originalScore} → {o.professionalJudgementOverride?.adjustedScore}
                       </p>
                     </div>
@@ -185,33 +185,33 @@ export default function Reports() {
       </div>
 
       {/* Assessor Stats */}
-      <div className="bg-white rounded-lg border p-6">
-        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+      <div className="glass rounded-xl p-6">
+        <h3 className="font-semibold text-slate-200 mb-4 flex items-center gap-2">
           <Users size={18} /> Assessor Statistics
         </h3>
         {assessors.length > 0 ? (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50">
+            <thead className="border-b border-white/10">
               <tr>
-                <th className="px-4 py-2 text-left text-gray-600">Assessor</th>
-                <th className="px-4 py-2 text-left text-gray-600">Total</th>
-                <th className="px-4 py-2 text-left text-gray-600">Approved</th>
-                <th className="px-4 py-2 text-left text-gray-600">Drafts</th>
+                <th className="px-4 py-2 text-left text-slate-400">Assessor</th>
+                <th className="px-4 py-2 text-left text-slate-400">Total</th>
+                <th className="px-4 py-2 text-left text-slate-400">Approved</th>
+                <th className="px-4 py-2 text-left text-slate-400">Drafts</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-white/10">
               {assessors.map((a, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 font-medium">{a.assessor?.fullName || 'Unknown'}</td>
-                  <td className="px-4 py-2">{a.totalAssessments}</td>
-                  <td className="px-4 py-2 text-green-600">{a.approved}</td>
-                  <td className="px-4 py-2 text-gray-500">{a.drafts}</td>
+                <tr key={i} className="hover:bg-white/5">
+                  <td className="px-4 py-2 font-medium text-slate-300">{a.assessor?.fullName || 'Unknown'}</td>
+                  <td className="px-4 py-2 text-slate-300">{a.totalAssessments}</td>
+                  <td className="px-4 py-2 text-emerald-400">{a.approved}</td>
+                  <td className="px-4 py-2 text-slate-500">{a.drafts}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          <p className="text-gray-500 text-center py-4">No assessor data yet</p>
+          <p className="text-slate-500 text-center py-4">No assessor data yet</p>
         )}
       </div>
     </div>

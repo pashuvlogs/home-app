@@ -92,27 +92,27 @@ export default function Part6Approval() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-6">Part 6: Next Steps for Assessor</h3>
+      <div className="glass rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-slate-200 mb-6">Part 6: Next Steps for Assessor</h3>
 
         <div className="space-y-6 max-w-2xl">
           {/* Confirm Ratings */}
           <div>
-            <h4 className="font-medium text-gray-800 mb-4">Confirm Assessment Ratings</h4>
+            <h4 className="font-medium text-slate-200 mb-4">Confirm Assessment Ratings</h4>
 
             <div className="grid grid-cols-2 gap-4">
               <fieldset>
-                <legend className="text-sm font-medium text-gray-700 mb-2">
+                <legend className="text-sm font-medium text-slate-300 mb-2">
                   Housing Need <span className="text-red-500">*</span>
                 </legend>
                 <div className="flex gap-2">
                   {['High', 'Medium', 'Low'].map((level) => (
                     <label key={level} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer text-sm ${
                       data.housingNeed === level
-                        ? level === 'High' ? 'bg-red-50 border-red-300 text-red-700'
-                          : level === 'Medium' ? 'bg-yellow-50 border-yellow-300 text-yellow-700'
-                          : 'bg-green-50 border-green-300 text-green-700'
-                        : 'border-gray-300 hover:bg-gray-50'
+                        ? level === 'High' ? 'bg-red-500/20 border-red-500/40 text-red-400'
+                          : level === 'Medium' ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400'
+                          : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                        : 'border-white/15 hover:bg-white/5'
                     }`}>
                       <input type="radio" name="housingNeed" value={level} checked={data.housingNeed === level}
                         onChange={(e) => update('housingNeed', e.target.value)} disabled={isLocked} className="w-3.5 h-3.5" />
@@ -123,17 +123,17 @@ export default function Part6Approval() {
               </fieldset>
 
               <fieldset>
-                <legend className="text-sm font-medium text-gray-700 mb-2">
+                <legend className="text-sm font-medium text-slate-300 mb-2">
                   Tenancy Suitability Challenge Risk <span className="text-red-500">*</span>
                 </legend>
                 <div className="flex gap-2">
                   {['High', 'Medium', 'Low'].map((level) => (
                     <label key={level} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer text-sm ${
                       data.tenancyRisk === level
-                        ? level === 'High' ? 'bg-red-50 border-red-300 text-red-700'
-                          : level === 'Medium' ? 'bg-yellow-50 border-yellow-300 text-yellow-700'
-                          : 'bg-green-50 border-green-300 text-green-700'
-                        : 'border-gray-300 hover:bg-gray-50'
+                        ? level === 'High' ? 'bg-red-500/20 border-red-500/40 text-red-400'
+                          : level === 'Medium' ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400'
+                          : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                        : 'border-white/15 hover:bg-white/5'
                     }`}>
                       <input type="radio" name="tenancyRisk" value={level} checked={data.tenancyRisk === level}
                         onChange={(e) => update('tenancyRisk', e.target.value)} disabled={isLocked} className="w-3.5 h-3.5" />
@@ -147,7 +147,7 @@ export default function Part6Approval() {
 
           {/* Approval Pathway */}
           <fieldset>
-            <legend className="text-sm font-medium text-gray-700 mb-2">
+            <legend className="text-sm font-medium text-slate-300 mb-2">
               Approval Pathway <span className="text-red-500">*</span>
               <Tooltip text={`Based on Tenancy Risk of "${data.tenancyRisk || '...'}", the suggested pathway is ${suggestedPathway}`} />
             </legend>
@@ -159,9 +159,9 @@ export default function Part6Approval() {
               ].map((pathway) => (
                 <div key={pathway.value} className={`p-3 rounded-lg border ${
                   data.approvalPathway === pathway.value
-                    ? 'border-blue-300 bg-blue-50'
-                    : 'border-gray-200'
-                } ${suggestedPathway === pathway.value ? 'ring-2 ring-blue-200' : ''}`}>
+                    ? 'border-cyan-500/40 bg-cyan-500/10'
+                    : 'border-white/10'
+                } ${suggestedPathway === pathway.value ? 'ring-2 ring-cyan-500/30' : ''}`}>
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="radio"
@@ -170,34 +170,34 @@ export default function Part6Approval() {
                       checked={data.approvalPathway === pathway.value}
                       onChange={(e) => update('approvalPathway', e.target.value)}
                       disabled={isLocked}
-                      className="w-4 h-4 text-blue-600"
+                      className="w-4 h-4 text-cyan-400"
                     />
-                    <span className="text-sm font-medium text-gray-700">{pathway.label}</span>
+                    <span className="text-sm font-medium text-slate-300">{pathway.label}</span>
                     {suggestedPathway === pathway.value && (
-                      <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded">Suggested</span>
+                      <span className="text-xs bg-cyan-500/15 text-cyan-400 px-2 py-0.5 rounded">Suggested</span>
                     )}
                   </label>
 
                   {data.approvalPathway === pathway.value && (
                     <div className="grid grid-cols-2 gap-3 mt-3 ml-7">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Signature / Name</label>
+                        <label className="block text-xs text-slate-500 mb-1">Signature / Name</label>
                         <input
                           type="text"
                           value={data[pathway.fields[0]]}
                           onChange={(e) => update(pathway.fields[0], e.target.value)}
                           disabled={isLocked}
-                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded"
+                          className="w-full px-2 py-1.5 text-sm rounded input-glass"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Date</label>
+                        <label className="block text-xs text-slate-500 mb-1">Date</label>
                         <input
                           type="date"
                           value={data[pathway.fields[1]]}
                           onChange={(e) => update(pathway.fields[1], e.target.value)}
                           disabled={isLocked}
-                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded"
+                          className="w-full px-2 py-1.5 text-sm rounded input-glass"
                         />
                       </div>
                     </div>
@@ -208,16 +208,16 @@ export default function Part6Approval() {
           </fieldset>
 
           {/* Professional Judgement */}
-          <div className="border border-gray-200 rounded-lg p-4">
+          <div className="border border-white/10 rounded-lg p-4">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={data.professionalJudgement}
                 onChange={(e) => update('professionalJudgement', e.target.checked)}
                 disabled={isLocked}
-                className="w-4 h-4 rounded text-blue-600"
+                className="w-4 h-4 rounded text-cyan-400"
               />
-              <span className="text-sm font-medium text-gray-700">For Discussion / Professional Judgement</span>
+              <span className="text-sm font-medium text-slate-300">For Discussion / Professional Judgement</span>
             </label>
             {data.professionalJudgement && (
               <div className="mt-3 ml-7">
@@ -226,7 +226,7 @@ export default function Part6Approval() {
                   onChange={(e) => update('professionalJudgementText', e.target.value)}
                   disabled={isLocked}
                   rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 rounded-lg input-glass"
                   placeholder="Provide justification..."
                   required
                 />
@@ -236,41 +236,41 @@ export default function Part6Approval() {
 
           {/* Submission Error */}
           {submitError && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <h4 className="text-sm font-medium text-red-800 mb-1 flex items-center gap-2">
+            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <h4 className="text-sm font-medium text-red-400 mb-1 flex items-center gap-2">
                 <AlertTriangle size={16} /> Cannot Submit
               </h4>
-              <pre className="text-sm text-red-700 whitespace-pre-wrap">{submitError}</pre>
+              <pre className="text-sm text-red-400 whitespace-pre-wrap">{submitError}</pre>
             </div>
           )}
         </div>
 
         {/* Actions */}
         {!isLocked && isOwner && (
-          <div className="flex items-center gap-3 mt-8 pt-6 border-t border-gray-200">
-            <button onClick={() => navigate(`/assessment/${assessment.id}/5`)} className="flex items-center gap-2 px-4 py-2.5 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <div className="flex items-center gap-3 mt-8 pt-6 border-t border-white/10">
+            <button onClick={() => navigate(`/assessment/${assessment.id}/5`)} className="flex items-center gap-2 px-4 py-2.5 btn-ghost rounded-lg">
               <ArrowLeft size={16} /> Back
             </button>
-            <button onClick={handleSubmit} disabled={submitting} className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
+            <button onClick={handleSubmit} disabled={submitting} className="flex items-center gap-2 px-6 py-2.5 btn-neon-green rounded-lg disabled:opacity-50">
               <Send size={16} /> {submitting ? 'Submitting...' : 'Submit for Approval'}
             </button>
-            <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2.5 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+            <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2.5 btn-ghost rounded-lg disabled:opacity-50">
               <Save size={16} /> Save Draft
             </button>
           </div>
         )}
 
         {assessment.status === 'approved' && (
-          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-            <CheckCircle size={20} className="text-green-600" />
-            <span className="text-green-800 font-medium">This assessment has been approved.</span>
+          <div className="mt-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center gap-3">
+            <CheckCircle size={20} className="text-emerald-400" />
+            <span className="text-emerald-400 font-medium">This assessment has been approved.</span>
           </div>
         )}
       </div>
 
       {/* Approval History */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h4 className="font-medium text-gray-800 mb-4">Approval History</h4>
+      <div className="glass rounded-xl p-6">
+        <h4 className="font-medium text-slate-200 mb-4">Approval History</h4>
         <AuditTimeline assessmentId={assessment.id} />
       </div>
     </div>

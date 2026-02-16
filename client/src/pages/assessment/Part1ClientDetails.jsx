@@ -47,12 +47,12 @@ export default function Part1ClientDetails() {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-6">Part 1: Client Details</h3>
+    <div className="glass rounded-xl p-6">
+      <h3 className="text-lg font-semibold text-slate-200 mb-6">Part 1: Client Details</h3>
 
       <div className="space-y-4 max-w-xl">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-300 mb-1">
             Applicant Name <span className="text-red-500">*</span>
           </label>
           <input
@@ -60,13 +60,13 @@ export default function Part1ClientDetails() {
             value={data.applicantName}
             onChange={(e) => update('applicantName', e.target.value)}
             disabled={isLocked}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            className="w-full px-3 py-2 rounded-lg input-glass"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-300 mb-1">
             Date of Assessment <span className="text-red-500">*</span>
           </label>
           <input
@@ -74,12 +74,12 @@ export default function Part1ClientDetails() {
             value={data.dateOfAssessment}
             onChange={(e) => update('dateOfAssessment', e.target.value)}
             disabled={isLocked}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            className="w-full px-3 py-2 rounded-lg input-glass"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-slate-300 mb-1">
             Assessor Name <span className="text-red-500">*</span>
           </label>
           <input
@@ -87,13 +87,13 @@ export default function Part1ClientDetails() {
             value={data.assessorName}
             onChange={(e) => update('assessorName', e.target.value)}
             disabled={isLocked}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            className="w-full px-3 py-2 rounded-lg input-glass"
           />
         </div>
 
         {/* Existing Assessment Search */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="mt-6 pt-6 border-t border-white/10">
+          <label className="block text-sm font-medium text-slate-300 mb-2">
             Check for Existing Assessments
           </label>
           <div className="flex gap-2">
@@ -102,25 +102,25 @@ export default function Part1ClientDetails() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by applicant name..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+              className="flex-1 px-3 py-2 rounded-lg input-glass"
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             />
-            <button onClick={handleSearch} className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200">
+            <button onClick={handleSearch} className="px-3 py-2 btn-ghost rounded-lg">
               <Search size={16} />
             </button>
           </div>
           {searchResults.length > 0 && (
-            <div className="mt-2 border border-gray-200 rounded-lg divide-y text-sm">
+            <div className="mt-2 border border-white/10 rounded-lg divide-y divide-white/10 text-sm">
               {searchResults.map((r) => (
-                <div key={r.id} className="px-3 py-2 flex justify-between items-center hover:bg-gray-50">
+                <div key={r.id} className="px-3 py-2 flex justify-between items-center hover:bg-white/5">
                   <div>
-                    <span className="font-medium">{r.applicantName}</span>
-                    <span className="text-gray-500 ml-2">{new Date(r.createdAt).toLocaleDateString()}</span>
-                    <span className="text-xs ml-2 text-gray-400">{r.status}</span>
+                    <span className="font-medium text-slate-200">{r.applicantName}</span>
+                    <span className="text-slate-500 ml-2">{new Date(r.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs ml-2 text-slate-500">{r.status}</span>
                   </div>
                   <button
                     onClick={() => navigate(`/assessment/${r.id}/1`)}
-                    className="text-blue-600 hover:underline text-xs"
+                    className="text-cyan-400 hover:underline text-xs"
                   >
                     View
                   </button>
@@ -133,18 +133,18 @@ export default function Part1ClientDetails() {
 
       {/* Actions */}
       {!isLocked && (
-        <div className="flex items-center gap-3 mt-8 pt-6 border-t border-gray-200">
+        <div className="flex items-center gap-3 mt-8 pt-6 border-t border-white/10">
           <button
             onClick={() => handleSave(true)}
             disabled={saving}
-            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-2.5 btn-neon rounded-lg disabled:opacity-50"
           >
             Save & Continue <ArrowRight size={16} />
           </button>
           <button
             onClick={() => handleSave(false)}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2.5 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2.5 btn-ghost rounded-lg disabled:opacity-50"
           >
             <Save size={16} /> Save Draft
           </button>

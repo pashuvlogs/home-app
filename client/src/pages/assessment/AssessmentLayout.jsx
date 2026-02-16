@@ -55,8 +55,8 @@ export default function AssessmentLayout() {
     setLoading(false);
   }
 
-  if (loading) return <div className="text-center py-8 text-gray-500">Loading assessment...</div>;
-  if (!assessment) return <div className="text-center py-8 text-red-500">Assessment not found</div>;
+  if (loading) return <div className="text-center py-8 text-slate-500">Loading assessment...</div>;
+  if (!assessment) return <div className="text-center py-8 text-red-400">Assessment not found</div>;
 
   const isLocked = !!assessment.lockedAt;
   const isOwner = assessment.assessorId === user.id;
@@ -64,7 +64,7 @@ export default function AssessmentLayout() {
   if (showPrint) {
     return (
       <div>
-        <button onClick={() => setShowPrint(false)} className="mb-4 text-sm text-blue-600 hover:underline no-print">&larr; Back to Assessment</button>
+        <button onClick={() => setShowPrint(false)} className="mb-4 text-sm text-cyan-400 hover:underline no-print">&larr; Back to Assessment</button>
         <PrintView assessment={assessment} />
       </div>
     );
@@ -73,9 +73,9 @@ export default function AssessmentLayout() {
   if (showAudit) {
     return (
       <div>
-        <button onClick={() => setShowAudit(false)} className="mb-4 text-sm text-blue-600 hover:underline">&larr; Back to Assessment</button>
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold mb-4">Audit Trail - {assessment.applicantName}</h2>
+        <button onClick={() => setShowAudit(false)} className="mb-4 text-sm text-cyan-400 hover:underline">&larr; Back to Assessment</button>
+        <div className="glass rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-slate-200 mb-4">Audit Trail - {assessment.applicantName}</h2>
           <AuditTimeline assessmentId={assessment.id} />
         </div>
       </div>
@@ -87,33 +87,33 @@ export default function AssessmentLayout() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-slate-200">
             {assessment.applicantName}
             {isLocked && (
-              <span className="ml-3 inline-flex items-center gap-1 text-sm font-normal text-orange-600 bg-orange-50 px-2 py-1 rounded">
+              <span className="ml-3 inline-flex items-center gap-1 text-sm font-normal text-orange-400 bg-orange-500/10 px-2 py-1 rounded">
                 <Lock size={14} /> Approved - Read Only
               </span>
             )}
           </h2>
           {assessment.lastSavedAt && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-500">
               Last saved: {new Date(assessment.lastSavedAt).toLocaleString()}
               {assessment.lastSavedPart && ` (Part ${assessment.lastSavedPart})`}
             </p>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowAudit(true)} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">
+          <button onClick={() => setShowAudit(true)} className="flex items-center gap-1 px-3 py-1.5 text-sm text-slate-400 border border-white/15 rounded hover:bg-white/5">
             <History size={14} /> History
           </button>
-          <button onClick={() => setShowPrint(true)} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50">
+          <button onClick={() => setShowPrint(true)} className="flex items-center gap-1 px-3 py-1.5 text-sm text-slate-400 border border-white/15 rounded hover:bg-white/5">
             <Printer size={14} /> Print
           </button>
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
+      <div className="flex border-b border-white/10 mb-6 overflow-x-auto">
         {[1, 2, 3, 4, 5, 6].map((part) => {
           const completion = getPartCompletion(assessment.formData, part);
           const isActive = currentPart === part;
@@ -124,16 +124,16 @@ export default function AssessmentLayout() {
               onClick={() => navigate(`/assessment/${id}/${part}`)}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap ${
                 isActive
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-cyan-400 text-cyan-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-300 hover:border-white/20'
               }`}
             >
               {completion === 'complete' ? (
-                <Check size={16} className="text-green-500" />
+                <Check size={16} className="text-emerald-400" />
               ) : completion === 'partial' ? (
-                <AlertCircle size={16} className="text-yellow-500" />
+                <AlertCircle size={16} className="text-yellow-400" />
               ) : (
-                <Circle size={16} className="text-gray-300" />
+                <Circle size={16} className="text-slate-500" />
               )}
               Part {part}
               <span className="hidden md:inline text-xs">- {partNames[part]}</span>

@@ -27,44 +27,44 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-xl mb-4">
-            <Home size={32} className="text-white" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl gradient-border bg-gradient-to-br from-cyan-500/20 to-purple-500/20 mb-4">
+            <Home size={36} className="text-cyan-400" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">H.O.M.E.</h1>
-          <p className="text-gray-600 mt-1">Housing Opportunity & Matching Evaluation</p>
+          <h1 className="text-4xl font-bold neon-blue">H.O.M.E.</h1>
+          <p className="text-slate-400 mt-2">Housing Opportunity & Matching Evaluation</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Sign In</h2>
+        <div className="glass-strong rounded-2xl p-8">
+          <h2 className="text-xl font-semibold text-slate-200 mb-6">Sign In</h2>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1.5">Username</label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2.5 rounded-lg input-glass"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-sm font-medium text-slate-400 mb-1.5">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2.5 rounded-lg input-glass"
                 required
               />
             </div>
@@ -72,26 +72,26 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="w-full py-2.5 btn-neon rounded-lg font-medium disabled:opacity-50 transition-all duration-300"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-500 mb-3">Demo accounts:</p>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-gray-600">
-                <span><strong>sarah</strong> / password123</span>
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Assessor</span>
+          <div className="mt-6 pt-6 border-t border-white/10">
+            <p className="text-sm text-slate-500 mb-3">Demo accounts:</p>
+            <div className="space-y-2.5 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400"><strong className="text-slate-300">sarah</strong> / password123</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full glass neon-blue">Assessor</span>
               </div>
-              <div className="flex justify-between text-gray-600">
-                <span><strong>david</strong> / password123</span>
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Manager</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400"><strong className="text-slate-300">david</strong> / password123</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full glass neon-green">Manager</span>
               </div>
-              <div className="flex justify-between text-gray-600">
-                <span><strong>priya</strong> / password123</span>
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Senior Manager</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400"><strong className="text-slate-300">priya</strong> / password123</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full glass neon-purple">Senior Manager</span>
               </div>
             </div>
           </div>

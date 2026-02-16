@@ -13,26 +13,32 @@ export default function Layout() {
     senior_manager: 'Senior Manager',
   };
 
+  const roleColors = {
+    assessor: 'neon-blue',
+    manager: 'neon-green',
+    senior_manager: 'neon-purple',
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="no-print bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen">
+      <header className="no-print glass-strong sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-6">
-              <Link to="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Home size={18} className="text-white" />
+              <Link to="/" className="flex items-center gap-2 group">
+                <div className="w-9 h-9 rounded-lg gradient-border flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-purple-500/20">
+                  <Home size={18} className="text-cyan-400" />
                 </div>
-                <span className="text-lg font-bold text-gray-900">H.O.M.E.</span>
+                <span className="text-lg font-bold neon-blue">H.O.M.E.</span>
               </Link>
 
               <nav className="flex items-center gap-1">
                 <Link
                   to="/"
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
                     location.pathname === '/'
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-cyan-500/15 text-cyan-400 glow-blue'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                   }`}
                 >
                   Dashboard
@@ -40,10 +46,10 @@ export default function Layout() {
                 {hasRole('manager', 'senior_manager') && (
                   <Link
                     to="/reports"
-                    className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-1 ${
+                    className={`px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all duration-300 ${
                       location.pathname === '/reports'
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'bg-purple-500/15 text-purple-400 glow-purple'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                     }`}
                   >
                     <BarChart3 size={16} />
@@ -55,15 +61,15 @@ export default function Layout() {
 
             <div className="flex items-center gap-4">
               <NotificationPanel />
-              <div className="text-sm text-gray-600">
-                <span className="font-medium">{user?.fullName}</span>
-                <span className="ml-1 text-xs px-2 py-0.5 bg-gray-100 rounded-full">
+              <div className="text-sm">
+                <span className="text-slate-300 font-medium">{user?.fullName}</span>
+                <span className={`ml-2 text-xs px-2.5 py-0.5 rounded-full glass ${roleColors[user?.role]}`}>
                   {roleLabels[user?.role]}
                 </span>
               </div>
               <button
                 onClick={logout}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-red-600 border border-gray-300 rounded-md hover:border-red-300"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm btn-ghost rounded-lg"
               >
                 <LogOut size={14} />
                 Logout
