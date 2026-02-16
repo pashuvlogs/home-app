@@ -1,8 +1,3 @@
-databases:
-  - name: home-db
-    plan: free
-    databaseName: home_app
-
 services:
   - type: web
     name: home-app
@@ -17,6 +12,4 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase:
-          name: home-db
-          property: connectionString
+        sync: false
