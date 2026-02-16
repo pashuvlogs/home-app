@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     nodeVersion: "20"
-    buildCommand: cd client && npm install && npm run build && cd ../server && npm install --production
+    buildCommand: cd client && npm install --include=dev && npm run build && cd ../server && npm install --production
     startCommand: cd server && node server.js
     envVars:
       - key: NODE_ENV
