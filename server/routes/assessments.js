@@ -36,7 +36,7 @@ router.post('/', requireRole('assessor'), async (req, res) => {
           dateOfAssessment: new Date().toISOString().split('T')[0],
           assessorName: req.user.fullName,
         },
-        part2: {}, part3: {}, part4: {}, part5: {}, part6: {},
+        part2: {}, part3: {}, part4: {}, part5: {}, part6: {}, part7: {}, part8: {},
       },
       lastSavedAt: new Date(),
       lastSavedPart: 1,
@@ -129,6 +129,7 @@ router.get('/:id', async (req, res) => {
     const assessment = await Assessment.findByPk(req.params.id, {
       include: [
         { model: User, as: 'assessor', attributes: ['id', 'fullName', 'username'] },
+        { model: User, as: 'approver', attributes: ['id', 'fullName', 'role'] },
         {
           model: AuditLog, as: 'auditLogs',
           include: [{ model: User, as: 'user', attributes: ['id', 'fullName'] }],
@@ -169,7 +170,7 @@ router.put('/:id/part/:partNum', async (req, res) => {
     }
 
     const partNum = parseInt(req.params.partNum);
-    if (partNum < 1 || partNum > 6) {
+    if (partNum < 1 || partNum > 8) {
       return res.status(400).json({ error: 'Invalid part number' });
     }
 
@@ -185,19 +186,24 @@ router.put('/:id/part/:partNum', async (req, res) => {
       currentPart: Math.max(assessment.currentPart, partNum),
     };
 
+    // Part 2: Housing Need Rating (auto-calculated)
     if (partNum === 2 && req.body.data.housingNeedRating) {
       updates.housingNeedRating = req.body.data.housingNeedRating;
     }
-    if (partNum === 3 && req.body.data.grossChallengeRating) {
-      updates.grossChallengeRating = req.body.data.grossChallengeRating;
-    }
-    if (partNum === 4 && req.body.data.residualChallengeRating) {
-      updates.residualChallengeRating = req.body.data.residualChallengeRating;
-    }
-    if (partNum === 5) {
+    // Part 7: Summary — extract gross, residual, overall
+    if (partNum === 7) {
+      if (req.body.data.grossChallengeRating) {
+        updates.grossChallengeRating = req.body.data.grossChallengeRating;
+      }
+      if (req.body.data.residualChallengeRating) {
+        updates.residualChallengeRating = req.body.data.residualChallengeRating;
+      }
       if (req.body.data.overallMatchChallenge) {
         updates.overallMatchChallenge = req.body.data.overallMatchChallenge;
       }
+    }
+    // Part 8: Approval — extract final recommendation
+    if (partNum === 8) {
       if (req.body.data.finalRecommendation) {
         updates.finalRecommendation = req.body.data.finalRecommendation;
       }
@@ -227,8 +233,8 @@ router.post('/:id/submit', async (req, res) => {
       return res.status(403).json({ error: 'Only the assessor can submit' });
     }
 
-    // Determine approval pathway based on tenancy risk
-    const tenancyRisk = assessment.formData.part6?.tenancyRisk || assessment.overallMatchChallenge;
+    // Determine approval pathway based on tenancy risk (now in part8)
+    const tenancyRisk = assessment.formData.part8?.tenancyRisk || assessment.formData.part6?.tenancyRisk || assessment.overallMatchChallenge;
     let newStatus;
 
     if (tenancyRisk === 'High') {
@@ -357,7 +363,7 @@ router.post('/:id/defer/complete', requireRole('manager', 'senior_manager'), asy
       return res.status(400).json({ error: 'Assessment is not deferred' });
     }
 
-    const tenancyRisk = assessment.formData.part6?.tenancyRisk || assessment.overallMatchChallenge;
+    const tenancyRisk = assessment.formData.part8?.tenancyRisk || assessment.formData.part6?.tenancyRisk || assessment.overallMatchChallenge;
     const newStatus = tenancyRisk === 'High' ? 'pending_senior' : 'pending_manager';
 
     await assessment.update({ status: newStatus });

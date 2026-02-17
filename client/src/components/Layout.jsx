@@ -1,10 +1,12 @@
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import NotificationPanel from './NotificationPanel';
-import { Home, BarChart3, LogOut } from 'lucide-react';
+import { Home, BarChart3, LogOut, Sun, Moon } from 'lucide-react';
 
 export default function Layout() {
   const { user, logout, hasRole } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
   const roleLabels = {
@@ -60,6 +62,13 @@ export default function Layout() {
             </div>
 
             <div className="flex items-center gap-4">
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
               <NotificationPanel />
               <div className="text-sm">
                 <span className="text-slate-300 font-medium">{user?.fullName}</span>

@@ -1,66 +1,87 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { savePart } from '../../api/client';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import Tooltip from '../../components/Tooltip';
 import { Save, ArrowRight, ArrowLeft } from 'lucide-react';
 
-const fields = [
+const categories = [
   {
-    key: 'antiSocialBehaviour', label: 'Anti-social Behaviour',
-    tip: 'Assess the applicant\'s history of anti-social behaviour in previous tenancies',
+    key: 'antiSocialBehaviour',
+    label: 'Anti-Social Behaviour',
+    tip: 'Select the single best-fit option describing the applicant\'s anti-social behaviour history.',
     options: [
-      'Positive history/no previous tenancy',
-      'Minor issues resolved',
-      'Eviction(s) with mitigating factors',
-      'Multiple evictions',
-      'Neighbour disputes',
+      { value: 'positive_history', label: 'Positive history / no previous tenancy', score: 0 },
+      { value: 'minor_resolved', label: 'Minor issues resolved', score: 1 },
+      { value: 'eviction_mitigating', label: 'Eviction(s) with mitigating factors', score: 2 },
+      { value: 'multiple_evictions', label: 'Multiple evictions', score: 4 },
+      { value: 'neighbour_disputes', label: 'Neighbour disputes', score: 3 },
     ],
   },
   {
-    key: 'criminalHistory', label: 'Criminal History',
-    tip: 'Assess any criminal history relevant to tenancy suitability',
-    options: ['No concerns', 'Historical concerns, now resolved', 'Intimidation / assault', 'Violence', 'Drug related'],
+    key: 'criminalHistory',
+    label: 'Criminal History',
+    tip: 'Select the single best-fit option regarding criminal history relevant to tenancy suitability.',
+    options: [
+      { value: 'no_concerns', label: 'No concerns', score: 0 },
+      { value: 'historical_resolved', label: 'Historical concerns, now resolved', score: 1 },
+      { value: 'intimidation_assault', label: 'Intimidation / assault', score: 4 },
+      { value: 'violence', label: 'Violence', score: 4 },
+      { value: 'drug_related', label: 'Drug related', score: 3 },
+    ],
   },
   {
-    key: 'gangAffiliations', label: 'Gang Affiliations',
-    tip: 'Assess any gang affiliations that may affect housing placement',
-    options: ['No concerns', 'Historical concerns, now resolved', 'Recent gang association', 'Gang member'],
+    key: 'gangAffiliations',
+    label: 'Gang Affiliations',
+    tip: 'Select the single best-fit option regarding gang affiliations.',
+    options: [
+      { value: 'no_concerns', label: 'No concerns', score: 0 },
+      { value: 'historical_resolved', label: 'Historical concerns, now resolved', score: 1 },
+      { value: 'recent_association', label: 'Recent gang association', score: 3 },
+      { value: 'gang_member', label: 'Gang member', score: 4 },
+    ],
   },
   {
-    key: 'thirdPartyAssociation', label: 'Third Party Association',
-    tip: 'Assess concerns about third party associations that may pose risk',
-    options: ['No concerns', 'Historical concerns, now resolved', 'Potential concern', 'Known concern'],
+    key: 'thirdPartyAssociation',
+    label: 'Third Party Association',
+    tip: 'Select the single best-fit option regarding third party associations that may pose risk.',
+    options: [
+      { value: 'no_concerns', label: 'No concerns', score: 0 },
+      { value: 'historical_resolved', label: 'Historical concerns, now resolved', score: 1 },
+      { value: 'potential_concern', label: 'Potential concern', score: 2 },
+      { value: 'known_concern', label: 'Known concern', score: 4 },
+    ],
   },
   {
-    key: 'propertyDamage', label: 'Property Damage',
-    tip: 'Assess history of damage to housing properties',
-    options: ['No damage history', 'Damage history', 'Damage arrears'],
+    key: 'propertyDamage',
+    label: 'Property Damage',
+    tip: 'Select the single best-fit option regarding property damage history.',
+    options: [
+      { value: 'no_damage', label: 'No damage history', score: 0 },
+      { value: 'minor_resolved', label: 'Damage history — minor / one-off resolved', score: 1 },
+      { value: 'serious_repeated', label: 'Damage history — serious or repeated', score: 3 },
+      { value: 'damage_arrears', label: 'Damage arrears', score: 3 },
+    ],
   },
   {
-    key: 'rent', label: 'Rent',
-    tip: 'Assess history of rent payment',
-    options: ['No concerns', 'Rent arrears history'],
+    key: 'rent',
+    label: 'Rent',
+    tip: 'Select the single best-fit option regarding rent payment history.',
+    options: [
+      { value: 'no_concerns', label: 'No concerns', score: 0 },
+      { value: 'rent_arrears', label: 'Rent arrears history', score: 2 },
+    ],
   },
   {
-    key: 'physicalHealth', label: 'Physical Health Needs',
-    tip: 'Assess physical health needs that may affect housing requirements',
-    options: ['No significant needs', 'Managed chronic condition', 'Multiple/poorly managed', 'Acute/hospital-level needs'],
-  },
-];
-
-const dualFields = [
-  {
-    key: 'mentalHealth', label: 'Mental Health',
-    tip: 'Assess mental health status and support arrangements',
-    statusOptions: ['No concerns', 'Diagnosed but stable', 'Active challenges', 'Co-occurring disorders'],
-    supportOptions: ['Supports in place', 'No supports in place'],
-  },
-  {
-    key: 'substanceAbuse', label: 'Substance Abuse',
-    tip: 'Assess substance abuse status and support arrangements',
-    statusOptions: ['No concerns', 'Diagnosed but stable', 'Active challenges', 'Co-occurring disorders'],
-    supportOptions: ['Supports in place', 'No supports in place'],
+    key: 'tenantResponsibility',
+    label: 'Tenant Responsibility',
+    tip: 'Select the single best-fit option for the applicant\'s demonstrated capacity for tenant responsibility.',
+    options: [
+      { value: 'strong', label: 'Strong responsibility', score: 0 },
+      { value: 'moderate', label: 'Moderate responsibility', score: 1 },
+      { value: 'limited', label: 'Limited responsibility', score: 2 },
+      { value: 'no_capacity', label: 'No responsibility capacity currently', score: 3 },
+    ],
   },
 ];
 
@@ -69,33 +90,49 @@ export default function Part3TenancySuitability() {
   const navigate = useNavigate();
   const part = assessment.formData?.part3 || {};
 
-  const [data, setData] = useState({
-    antiSocialBehaviour: part.antiSocialBehaviour || '',
-    criminalHistory: part.criminalHistory || '',
-    gangAffiliations: part.gangAffiliations || '',
-    thirdPartyAssociation: part.thirdPartyAssociation || '',
-    propertyDamage: part.propertyDamage || '',
-    rent: part.rent || '',
-    physicalHealth: part.physicalHealth || '',
-    mentalHealthStatus: part.mentalHealthStatus || '',
-    mentalHealthSupports: part.mentalHealthSupports || '',
-    substanceAbuseStatus: part.substanceAbuseStatus || '',
-    substanceAbuseSupports: part.substanceAbuseSupports || '',
-    challengeSummary: part.challengeSummary || '',
-    grossChallengeRating: part.grossChallengeRating || '',
+  // Initialize selections as single values (handle legacy array data)
+  const initialSelections = {};
+  categories.forEach((cat) => {
+    const saved = part[cat.key];
+    initialSelections[cat.key] = Array.isArray(saved) ? (saved[0] || '') : (saved || '');
   });
+
+  const [selections, setSelections] = useState(initialSelections);
+  const [sectionNotes, setSectionNotes] = useState(part.sectionNotes || '');
   const [saving, setSaving] = useState(false);
 
-  useAutoSave(assessment.id, 3, data, !isLocked);
-
-  function update(field, value) {
-    setData((prev) => ({ ...prev, [field]: value }));
+  function selectOption(categoryKey, optionValue) {
+    setSelections((prev) => ({ ...prev, [categoryKey]: optionValue }));
   }
+
+  // Calculate score per category and total
+  const categoryScores = useMemo(() => {
+    const scores = {};
+    categories.forEach((cat) => {
+      const selected = selections[cat.key];
+      const opt = cat.options.find((o) => o.value === selected);
+      scores[cat.key] = opt ? opt.score : 0;
+    });
+    return scores;
+  }, [selections]);
+
+  const totalScore = useMemo(() => {
+    return Object.values(categoryScores).reduce((sum, s) => sum + s, 0);
+  }, [categoryScores]);
+
+  const saveData = {
+    ...selections,
+    sectionNotes,
+    tenancyChallengeScore: totalScore,
+    categoryScores,
+  };
+
+  useAutoSave(assessment.id, 3, saveData, !isLocked);
 
   async function handleSave(andContinue = false) {
     setSaving(true);
     try {
-      await savePart(assessment.id, 3, data);
+      await savePart(assessment.id, 3, saveData);
       await loadAssessment();
       if (andContinue) navigate(`/assessment/${assessment.id}/4`);
     } catch (err) {
@@ -106,130 +143,84 @@ export default function Part3TenancySuitability() {
 
   return (
     <div className="glass rounded-xl p-6">
-      <h3 className="text-lg font-semibold text-slate-200 mb-6">Part 3: Tenancy Match Suitability</h3>
+      <h3 className="text-lg font-semibold text-slate-200 mb-2">Part 3: Tenancy Challenge</h3>
+      <p className="text-sm text-slate-400 mb-6">
+        Scores in this section add to the Gross Tenancy Challenge Score. Select the single best-fit option in each category.
+      </p>
 
       <div className="space-y-6 max-w-2xl">
-        {/* Radio button fields */}
-        {fields.map((field) => (
-          <fieldset key={field.key}>
-            <legend className="text-sm font-medium text-slate-300 mb-2">
-              {field.label} <span className="text-red-500">*</span>
-              <Tooltip text={field.tip} />
+        {categories.map((cat) => (
+          <fieldset key={cat.key}>
+            <legend className="text-sm font-medium text-slate-300 mb-2 flex items-center justify-between">
+              <span>
+                {cat.label} <span className="text-red-500">*</span>
+                <Tooltip text={cat.tip} />
+              </span>
+              <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+                categoryScores[cat.key] > 0 ? 'bg-orange-500/15 text-orange-400' : 'bg-slate-500/15 text-slate-500'
+              }`}>
+                +{categoryScores[cat.key]}
+              </span>
             </legend>
-            <div className="space-y-2">
-              {field.options.map((opt) => (
-                <label key={opt} className="flex items-center gap-3 p-2 rounded hover:bg-white/5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name={field.key}
-                    value={opt}
-                    checked={data[field.key] === opt}
-                    onChange={(e) => update(field.key, e.target.value)}
-                    disabled={isLocked}
-                    className="w-4 h-4 text-cyan-400"
-                  />
-                  <span className="text-sm text-slate-300">{opt}</span>
-                </label>
-              ))}
+            <div className="space-y-1">
+              {cat.options.map((opt) => {
+                const isSelected = selections[cat.key] === opt.value;
+                return (
+                  <label key={opt.value} className={`flex items-center justify-between p-2 rounded hover:bg-white/5 cursor-pointer ${
+                    isSelected ? 'bg-white/5 ring-1 ring-cyan-500/30' : ''
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name={cat.key}
+                        value={opt.value}
+                        checked={isSelected}
+                        onChange={(e) => selectOption(cat.key, e.target.value)}
+                        disabled={isLocked}
+                        className="w-4 h-4 text-cyan-400"
+                      />
+                      <span className="text-sm text-slate-300">{opt.label}</span>
+                    </div>
+                    <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+                      opt.score > 0 ? 'bg-orange-500/15 text-orange-400' : 'bg-slate-500/15 text-slate-500'
+                    }`}>
+                      +{opt.score}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
           </fieldset>
         ))}
 
-        {/* Dual-select fields (Mental Health, Substance Abuse) */}
-        {dualFields.map((field) => (
-          <fieldset key={field.key}>
-            <legend className="text-sm font-medium text-slate-300 mb-2">
-              {field.label} <span className="text-red-500">*</span>
-              <Tooltip text={field.tip} />
-            </legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-medium text-slate-500 mb-1">Status</p>
-                <div className="space-y-2">
-                  {field.statusOptions.map((opt) => (
-                    <label key={opt} className="flex items-center gap-3 p-2 rounded hover:bg-white/5 cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`${field.key}Status`}
-                        value={opt}
-                        checked={data[`${field.key}Status`] === opt}
-                        onChange={(e) => update(`${field.key}Status`, e.target.value)}
-                        disabled={isLocked}
-                        className="w-4 h-4 text-cyan-400"
-                      />
-                      <span className="text-sm text-slate-300">{opt}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-500 mb-1">Supports</p>
-                <div className="space-y-2">
-                  {field.supportOptions.map((opt) => (
-                    <label key={opt} className="flex items-center gap-3 p-2 rounded hover:bg-white/5 cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`${field.key}Supports`}
-                        value={opt}
-                        checked={data[`${field.key}Supports`] === opt}
-                        onChange={(e) => update(`${field.key}Supports`, e.target.value)}
-                        disabled={isLocked}
-                        className="w-4 h-4 text-cyan-400"
-                      />
-                      <span className="text-sm text-slate-300">{opt}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+        {/* Running Total */}
+        <div className="p-4 rounded-lg border border-white/10 bg-white/5">
+          <h4 className="text-sm font-medium text-slate-300 mb-3">Tenancy Challenge Sub-Score (Part 3)</h4>
+          <div className="flex items-center gap-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-orange-400">{totalScore}</div>
+              <div className="text-xs text-slate-500">Part 3 Score</div>
             </div>
-          </fieldset>
-        ))}
+            <div className="text-xs text-slate-500">
+              This score combines with Part 4 (Health & Wellbeing) to form the Gross Tenancy Challenge Score.
+            </div>
+          </div>
+        </div>
 
-        {/* Challenge Summary */}
+        {/* Section Notes */}
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">
-            Tenancy Suitability Challenge Summary
-            <Tooltip text="Summarize the key tenancy suitability challenges identified above" />
+            Section Notes (Optional)
           </label>
           <textarea
-            value={data.challengeSummary}
-            onChange={(e) => update('challengeSummary', e.target.value)}
+            value={sectionNotes}
+            onChange={(e) => setSectionNotes(e.target.value)}
             disabled={isLocked}
             rows="4"
             className="w-full px-3 py-2 rounded-lg input-glass"
-            placeholder="Summarize tenancy suitability challenges..."
+            placeholder="Add any additional context about tenancy challenge factors here..."
           />
         </div>
-
-        {/* Gross Challenge Rating */}
-        <fieldset>
-          <legend className="text-sm font-medium text-slate-300 mb-2">
-            Gross Suitability Challenge Assessment <span className="text-red-500">*</span>
-            <Tooltip text="Rate the overall tenancy suitability challenge level based on the data above. Low = minimal challenges, Medium = manageable with support, High = significant challenges" />
-          </legend>
-          <div className="flex gap-4">
-            {['High', 'Medium', 'Low'].map((level) => (
-              <label key={level} className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer ${
-                data.grossChallengeRating === level
-                  ? level === 'High' ? 'bg-red-500/20 border-red-500/40 text-red-400'
-                    : level === 'Medium' ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400'
-                    : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                  : 'border-white/15 hover:bg-white/5'
-              }`}>
-                <input
-                  type="radio"
-                  name="grossChallengeRating"
-                  value={level}
-                  checked={data.grossChallengeRating === level}
-                  onChange={(e) => update('grossChallengeRating', e.target.value)}
-                  disabled={isLocked}
-                  className="w-4 h-4"
-                />
-                <span className="font-medium">{level}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
       </div>
 
       {!isLocked && (

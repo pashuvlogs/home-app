@@ -11,6 +11,9 @@ export default function Part1ClientDetails() {
 
   const [data, setData] = useState({
     applicantName: part.applicantName || assessment.applicantName || '',
+    dateOfBirth: part.dateOfBirth || '',
+    gender: part.gender || '',
+    phoneNumber: part.phoneNumber || '',
     dateOfAssessment: part.dateOfAssessment || new Date().toISOString().split('T')[0],
     assessorName: part.assessorName || '',
   });
@@ -62,6 +65,50 @@ export default function Part1ClientDetails() {
             disabled={isLocked}
             className="w-full px-3 py-2 rounded-lg input-glass"
             required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-1">
+            Date of Birth
+          </label>
+          <input
+            type="date"
+            value={data.dateOfBirth}
+            onChange={(e) => update('dateOfBirth', e.target.value)}
+            disabled={isLocked}
+            className="w-full px-3 py-2 rounded-lg input-glass"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-1">
+            Gender
+          </label>
+          <select
+            value={data.gender}
+            onChange={(e) => update('gender', e.target.value)}
+            disabled={isLocked}
+            className="w-full px-3 py-2 rounded-lg input-glass"
+          >
+            <option value="">Prefer not to say</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Non-binary">Non-binary</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-1">
+            Phone Number
+          </label>
+          <input
+            type="tel"
+            value={data.phoneNumber}
+            onChange={(e) => update('phoneNumber', e.target.value)}
+            disabled={isLocked}
+            className="w-full px-3 py-2 rounded-lg input-glass"
+            placeholder="e.g. 021 123 4567"
           />
         </div>
 

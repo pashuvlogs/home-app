@@ -1,33 +1,37 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import { savePart } from '../../api/client';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import Tooltip from '../../components/Tooltip';
-import { Save, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Save, ArrowRight, ArrowLeft, Info } from 'lucide-react';
 
 const roughSleepingOptions = [
-  { value: 'housed_at_risk', label: 'Housed but at risk', tip: 'Currently housed but facing potential homelessness' },
-  { value: 'episodic_under_3m', label: 'Episodic (<3 months)', tip: 'Intermittent rough sleeping for less than 3 months' },
-  { value: 'chronic_3_12m', label: 'Chronic (3-12 months)', tip: 'Sustained rough sleeping between 3 and 12 months' },
-  { value: 'long_term_over_12m', label: 'Long-term (>12 months)', tip: 'Extended rough sleeping exceeding 12 months' },
-  { value: 'not_applicable', label: 'Not Applicable', tip: 'Rough sleeping history is not applicable' },
+  { value: 'housed_at_risk', label: 'Housed but at risk', score: 1 },
+  { value: 'episodic_under_3m', label: 'Episodic rough sleeping <3 months', score: 2 },
+  { value: 'chronic_3_12m', label: 'Chronic rough sleeping 3–12 months', score: 3 },
+  { value: 'long_term_over_12m', label: 'Long-term rough sleeping >12 months', score: 4 },
+  { value: 'not_applicable', label: 'Not Applicable', score: 0 },
 ];
 
 const housingStatusOptions = [
-  { value: 'stable_temporary', label: 'Stable temporary accommodation', tip: 'Secure temporary housing arrangement' },
-  { value: 'unstable_temporary', label: 'Unstable temporary accommodation', tip: 'Temporary housing that may end soon' },
-  { value: 'emergency_shelter', label: 'Emergency accommodation/shelter', tip: 'Emergency or shelter-based accommodation' },
-  { value: 'overcrowding', label: 'Overcrowding', tip: 'Living in overcrowded conditions' },
-  { value: 'couch_surfing', label: 'Couch surfing', tip: 'Staying temporarily with friends/family without a fixed arrangement' },
-  { value: 'unsuitable_housing', label: 'Unsuitable housing', tip: 'Current housing is unsuitable for the applicant\'s needs' },
+  { value: 'stable_temporary', label: 'Stable temporary accommodation', score: 1 },
+  { value: 'unstable_temporary', label: 'Unstable temporary accommodation', score: 2 },
+  { value: 'emergency_shelter', label: 'Emergency accommodation / shelter', score: 3 },
+  { value: 'overcrowding', label: 'Overcrowding', score: 2 },
+  { value: 'couch_surfing', label: 'Couch surfing', score: 3 },
+  { value: 'unsuitable_housing', label: 'Unsuitable housing', score: 2 },
 ];
 
-const suitabilityOptions = [
-  { value: 'standalone', label: 'Stand-alone housing', tip: 'Independent dwelling' },
-  { value: 'complex_2_10', label: 'Housing complex (2-10 properties)', tip: 'Small multi-unit complex' },
-  { value: 'complex_11_20', label: 'Housing complex (11-20 properties)', tip: 'Medium multi-unit complex' },
-  { value: 'complex_20_plus', label: 'Housing complex (20+ properties)', tip: 'Large multi-unit complex' },
-  { value: 'institutional', label: 'Institutional housing', tip: 'Supported or institutional accommodation' },
+function getHousingNeedRating(score) {
+  if (score >= 7) return 'High';
+  if (score >= 4) return 'Medium';
+  return 'Low';
+}
+
+const ratingInfo = [
+  { rating: 'Low', range: '0 – 3', meaning: 'Low urgency — suitable for standard allocation pipeline' },
+  { rating: 'Medium', range: '4 – 6', meaning: 'Moderate urgency — should be prioritised appropriately' },
+  { rating: 'High', range: '7 – 10', meaning: 'High urgency — immediate or priority housing response required' },
 ];
 
 export default function Part2HousingNeed() {
@@ -38,31 +42,41 @@ export default function Part2HousingNeed() {
   const [data, setData] = useState({
     roughSleepingDuration: part.roughSleepingDuration || '',
     currentHousingStatus: part.currentHousingStatus || '',
-    housingSuitability: part.housingSuitability || [],
-    housingNeedSummary: part.housingNeedSummary || '',
-    housingNeedRating: part.housingNeedRating || '',
+    sectionNotes: part.sectionNotes || '',
   });
   const [saving, setSaving] = useState(false);
 
-  useAutoSave(assessment.id, 2, data, !isLocked);
+  // Auto-calculate scores
+  const roughSleepingScore = useMemo(() => {
+    const opt = roughSleepingOptions.find((o) => o.value === data.roughSleepingDuration);
+    return opt ? opt.score : 0;
+  }, [data.roughSleepingDuration]);
+
+  const housingStatusScore = useMemo(() => {
+    const opt = housingStatusOptions.find((o) => o.value === data.currentHousingStatus);
+    return opt ? opt.score : 0;
+  }, [data.currentHousingStatus]);
+
+  const totalScore = roughSleepingScore + housingStatusScore;
+  const autoRating = getHousingNeedRating(totalScore);
+
+  // Include calculated fields in save data
+  const saveData = {
+    ...data,
+    housingNeedScore: totalScore,
+    housingNeedRating: autoRating,
+  };
+
+  useAutoSave(assessment.id, 2, saveData, !isLocked);
 
   function update(field, value) {
     setData((prev) => ({ ...prev, [field]: value }));
   }
 
-  function toggleSuitability(value) {
-    setData((prev) => ({
-      ...prev,
-      housingSuitability: prev.housingSuitability.includes(value)
-        ? prev.housingSuitability.filter((v) => v !== value)
-        : [...prev.housingSuitability, value],
-    }));
-  }
-
   async function handleSave(andContinue = false) {
     setSaving(true);
     try {
-      await savePart(assessment.id, 2, data);
+      await savePart(assessment.id, 2, saveData);
       await loadAssessment();
       if (andContinue) navigate(`/assessment/${assessment.id}/3`);
     } catch (err) {
@@ -73,29 +87,38 @@ export default function Part2HousingNeed() {
 
   return (
     <div className="glass rounded-xl p-6">
-      <h3 className="text-lg font-semibold text-slate-200 mb-6">Part 2: Housing Need</h3>
+      <h3 className="text-lg font-semibold text-slate-200 mb-2">Part 2: Housing Need Urgency</h3>
+      <p className="text-sm text-slate-400 mb-6">Scores in this section add to the Housing Need Score</p>
 
       <div className="space-y-6 max-w-2xl">
         {/* Rough Sleeping Duration */}
         <fieldset>
           <legend className="text-sm font-medium text-slate-300 mb-2">
             Rough Sleeping Duration <span className="text-red-500">*</span>
-            <Tooltip text="Select the option that best describes the applicant's rough sleeping history" />
+            <Tooltip text="Select the single best-fit option describing the applicant's rough sleeping history" />
           </legend>
           <div className="space-y-2">
             {roughSleepingOptions.map((opt) => (
-              <label key={opt.value} className="flex items-center gap-3 p-2 rounded hover:bg-white/5 cursor-pointer">
-                <input
-                  type="radio"
-                  name="roughSleeping"
-                  value={opt.value}
-                  checked={data.roughSleepingDuration === opt.value}
-                  onChange={(e) => update('roughSleepingDuration', e.target.value)}
-                  disabled={isLocked}
-                  className="w-4 h-4 text-cyan-400"
-                />
-                <span className="text-sm text-slate-300">{opt.label}</span>
-                <Tooltip text={opt.tip} />
+              <label key={opt.value} className={`flex items-center justify-between p-2 rounded hover:bg-white/5 cursor-pointer ${
+                data.roughSleepingDuration === opt.value ? 'bg-white/5 ring-1 ring-cyan-500/30' : ''
+              }`}>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="roughSleeping"
+                    value={opt.value}
+                    checked={data.roughSleepingDuration === opt.value}
+                    onChange={(e) => update('roughSleepingDuration', e.target.value)}
+                    disabled={isLocked}
+                    className="w-4 h-4 text-cyan-400"
+                  />
+                  <span className="text-sm text-slate-300">{opt.label}</span>
+                </div>
+                <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+                  opt.score > 0 ? 'bg-orange-500/15 text-orange-400' : 'bg-slate-500/15 text-slate-500'
+                }`}>
+                  +{opt.score}
+                </span>
               </label>
             ))}
           </div>
@@ -109,91 +132,88 @@ export default function Part2HousingNeed() {
           </legend>
           <div className="space-y-2">
             {housingStatusOptions.map((opt) => (
-              <label key={opt.value} className="flex items-center gap-3 p-2 rounded hover:bg-white/5 cursor-pointer">
-                <input
-                  type="radio"
-                  name="housingStatus"
-                  value={opt.value}
-                  checked={data.currentHousingStatus === opt.value}
-                  onChange={(e) => update('currentHousingStatus', e.target.value)}
-                  disabled={isLocked}
-                  className="w-4 h-4 text-cyan-400"
-                />
-                <span className="text-sm text-slate-300">{opt.label}</span>
-                <Tooltip text={opt.tip} />
+              <label key={opt.value} className={`flex items-center justify-between p-2 rounded hover:bg-white/5 cursor-pointer ${
+                data.currentHousingStatus === opt.value ? 'bg-white/5 ring-1 ring-cyan-500/30' : ''
+              }`}>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="housingStatus"
+                    value={opt.value}
+                    checked={data.currentHousingStatus === opt.value}
+                    onChange={(e) => update('currentHousingStatus', e.target.value)}
+                    disabled={isLocked}
+                    className="w-4 h-4 text-cyan-400"
+                  />
+                  <span className="text-sm text-slate-300">{opt.label}</span>
+                </div>
+                <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+                  opt.score > 0 ? 'bg-orange-500/15 text-orange-400' : 'bg-slate-500/15 text-slate-500'
+                }`}>
+                  +{opt.score}
+                </span>
               </label>
             ))}
           </div>
         </fieldset>
 
-        {/* Housing Suitability */}
-        <fieldset>
-          <legend className="text-sm font-medium text-slate-300 mb-2">
-            Housing - Applicant Suitability
-            <Tooltip text="Select all housing types suitable for the applicant" />
-          </legend>
-          <div className="space-y-2">
-            {suitabilityOptions.map((opt) => (
-              <label key={opt.value} className="flex items-center gap-3 p-2 rounded hover:bg-white/5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={data.housingSuitability.includes(opt.value)}
-                  onChange={() => toggleSuitability(opt.value)}
-                  disabled={isLocked}
-                  className="w-4 h-4 text-cyan-400 rounded"
-                />
-                <span className="text-sm text-slate-300">{opt.label}</span>
-                <Tooltip text={opt.tip} />
-              </label>
-            ))}
+        {/* Auto-calculated Score & Rating */}
+        <div className="p-4 rounded-lg border border-white/10 bg-white/5">
+          <h4 className="text-sm font-medium text-slate-300 mb-3">Housing Need Score</h4>
+          <div className="flex items-center gap-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-cyan-400">{totalScore}</div>
+              <div className="text-xs text-slate-500">Total Score</div>
+            </div>
+            <div className="text-center">
+              <div className={`text-lg font-bold px-4 py-1 rounded-lg ${
+                autoRating === 'High' ? 'bg-red-500/20 text-red-400'
+                  : autoRating === 'Medium' ? 'bg-yellow-500/20 text-yellow-400'
+                  : 'bg-emerald-500/20 text-emerald-400'
+              }`}>
+                {autoRating}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">Auto Rating</div>
+            </div>
           </div>
-        </fieldset>
 
-        {/* Housing Need Summary */}
+          {/* Rating guide */}
+          <div className="mt-3 border-t border-white/10 pt-3">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-slate-500">
+                  <th className="text-left py-1">Rating</th>
+                  <th className="text-left py-1">Score Range</th>
+                  <th className="text-left py-1">Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ratingInfo.map((r) => (
+                  <tr key={r.rating} className={`${autoRating === r.rating ? 'text-slate-200 font-medium' : 'text-slate-500'}`}>
+                    <td className="py-0.5">{r.rating}</td>
+                    <td className="py-0.5">{r.range}</td>
+                    <td className="py-0.5">{r.meaning}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Section Notes */}
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">
-            Housing Need Summary
-            <Tooltip text="Summarize the applicant's housing need based on the above selections" />
+            Section Notes (Optional)
           </label>
           <textarea
-            value={data.housingNeedSummary}
-            onChange={(e) => update('housingNeedSummary', e.target.value)}
+            value={data.sectionNotes}
+            onChange={(e) => update('sectionNotes', e.target.value)}
             disabled={isLocked}
             rows="4"
             className="w-full px-3 py-2 rounded-lg input-glass"
-            placeholder="Describe the applicant's housing need..."
+            placeholder="Add any additional context about the applicant's housing need here..."
           />
         </div>
-
-        {/* Housing Need Rating */}
-        <fieldset>
-          <legend className="text-sm font-medium text-slate-300 mb-2">
-            Housing Need Assessment <span className="text-red-500">*</span>
-            <Tooltip text="Rate the overall housing need based on your professional assessment of the data above" />
-          </legend>
-          <div className="flex gap-4">
-            {['High', 'Medium', 'Low'].map((level) => (
-              <label key={level} className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer ${
-                data.housingNeedRating === level
-                  ? level === 'High' ? 'bg-red-500/20 border-red-500/40 text-red-400'
-                    : level === 'Medium' ? 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400'
-                    : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                  : 'border-white/15 hover:bg-white/5'
-              }`}>
-                <input
-                  type="radio"
-                  name="housingNeedRating"
-                  value={level}
-                  checked={data.housingNeedRating === level}
-                  onChange={(e) => update('housingNeedRating', e.target.value)}
-                  disabled={isLocked}
-                  className="w-4 h-4"
-                />
-                <span className="font-medium">{level}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
       </div>
 
       {!isLocked && (

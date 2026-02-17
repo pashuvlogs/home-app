@@ -28,6 +28,7 @@ api.interceptors.response.use(
 export const login = (username, password) =>
   api.post('/auth/login', { username, password });
 export const getMe = () => api.get('/auth/me');
+export const getUsers = (role) => api.get('/auth/users', { params: { role } });
 
 // Assessments
 export const createAssessment = (applicantName) =>

@@ -9,8 +9,9 @@ import {
 } from '../api/client';
 import {
   Plus, Eye, ArrowRight, Trash2, CheckCircle, XCircle, Pause,
-  Clock, FileText, AlertTriangle, BarChart3,
+  Clock, FileText, AlertTriangle, BarChart3, BookOpen,
 } from 'lucide-react';
+import ScoringGuide from '../components/ScoringGuide';
 
 const statusLabels = {
   draft: 'Draft',
@@ -48,6 +49,7 @@ export default function Dashboard() {
   const [creating, setCreating] = useState(false);
   const [actionModal, setActionModal] = useState(null);
   const [actionNotes, setActionNotes] = useState('');
+  const [showScoringGuide, setShowScoringGuide] = useState(false);
   const [deferData, setDeferData] = useState({ reason: '', timeframe: '', actions: '', followUpDate: '' });
 
   useEffect(() => { loadAssessments(); }, []);
@@ -185,6 +187,9 @@ export default function Dashboard() {
             <Plus size={18} /> New Assessment
           </button>
         )}
+        <button onClick={() => setShowScoringGuide(true)} className="flex items-center gap-2 px-4 py-2.5 btn-ghost rounded-lg font-medium">
+          <BookOpen size={18} /> Scoring Guide
+        </button>
       </div>
 
       <SearchBar onSearch={handleSearch} showAssessorFilter={hasRole('manager', 'senior_manager')} />
@@ -351,6 +356,8 @@ export default function Dashboard() {
           </div>
         </Modal>
       )}
+
+      {showScoringGuide && <ScoringGuide onClose={() => setShowScoringGuide(false)} />}
     </div>
   );
 }

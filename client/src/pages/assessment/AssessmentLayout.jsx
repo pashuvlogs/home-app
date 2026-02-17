@@ -9,10 +9,12 @@ import AuditTimeline from '../../components/AuditTimeline';
 const partNames = {
   1: 'Client Details',
   2: 'Housing Need',
-  3: 'Tenancy Suitability',
-  4: 'Challenge Mitigation',
-  5: 'Summary & Recommendations',
-  6: 'Approval',
+  3: 'Tenancy Challenge',
+  4: 'Health & Wellbeing',
+  5: 'Support Networks',
+  6: 'Additional Info',
+  7: 'Summary',
+  8: 'Approval',
 };
 
 function getPartCompletion(formData, partNum) {
@@ -21,11 +23,16 @@ function getPartCompletion(formData, partNum) {
 
   const checks = {
     1: () => part.applicantName && part.assessorName,
-    2: () => part.roughSleepingDuration && part.currentHousingStatus && part.housingNeedRating,
-    3: () => part.antiSocialBehaviour && part.criminalHistory && part.grossChallengeRating,
-    4: () => part.supportNetwork && part.residualChallengeRating,
-    5: () => part.overallMatchChallenge && part.finalRecommendation,
-    6: () => part.housingNeed && part.tenancyRisk && part.approvalPathway,
+    2: () => part.roughSleepingDuration && part.currentHousingStatus,
+    3: () => {
+      const cats = ['antiSocialBehaviour', 'criminalHistory', 'gangAffiliations', 'thirdPartyAssociation', 'propertyDamage', 'rent', 'tenantResponsibility'];
+      return cats.some((k) => Array.isArray(part[k]) ? part[k].length > 0 : !!part[k]);
+    },
+    4: () => part.physicalHealth && part.mentalHealth && part.substanceAbuse,
+    5: () => part.supportNetwork && part.accessibilityNeeds && part.culturalConnections,
+    6: () => part.immediateNeeds || part.strengthsResilience || part.mitigatingFactors || part.supportAgencies,
+    7: () => part.overallMatchChallenge && part.housingType,
+    8: () => part.finalRecommendation && part.approvalPathway,
   };
 
   return checks[partNum]?.() ? 'complete' : 'partial';
@@ -114,7 +121,7 @@ export default function AssessmentLayout() {
 
       {/* Tab Navigation */}
       <div className="flex border-b border-white/10 mb-6 overflow-x-auto">
-        {[1, 2, 3, 4, 5, 6].map((part) => {
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((part) => {
           const completion = getPartCompletion(assessment.formData, part);
           const isActive = currentPart === part;
 
@@ -122,21 +129,21 @@ export default function AssessmentLayout() {
             <button
               key={part}
               onClick={() => navigate(`/assessment/${id}/${part}`)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-3 text-sm font-medium border-b-2 whitespace-nowrap ${
                 isActive
                   ? 'border-cyan-400 text-cyan-400'
                   : 'border-transparent text-slate-500 hover:text-slate-300 hover:border-white/20'
               }`}
             >
               {completion === 'complete' ? (
-                <Check size={16} className="text-emerald-400" />
+                <Check size={14} className="text-emerald-400" />
               ) : completion === 'partial' ? (
-                <AlertCircle size={16} className="text-yellow-400" />
+                <AlertCircle size={14} className="text-yellow-400" />
               ) : (
-                <Circle size={16} className="text-slate-500" />
+                <Circle size={14} className="text-slate-500" />
               )}
-              Part {part}
-              <span className="hidden md:inline text-xs">- {partNames[part]}</span>
+              <span className="md:hidden">{part}</span>
+              <span className="hidden md:inline">{part}. {partNames[part]}</span>
             </button>
           );
         })}

@@ -42,6 +42,8 @@ Notification.belongsTo(User, { foreignKey: 'userId' });
 Assessment.hasMany(Notification, { foreignKey: 'assessmentId' });
 Notification.belongsTo(Assessment, { foreignKey: 'assessmentId' });
 
+Assessment.belongsTo(User, { foreignKey: 'lockedBy', as: 'approver' });
+
 Assessment.belongsTo(Assessment, { foreignKey: 'amendedFromId', as: 'originalAssessment' });
 Assessment.hasMany(Assessment, { foreignKey: 'amendedFromId', as: 'amendments' });
 
