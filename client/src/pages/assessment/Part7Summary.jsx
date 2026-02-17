@@ -7,11 +7,28 @@ import { Save, ArrowRight, ArrowLeft, AlertTriangle, Calculator } from 'lucide-r
 
 const housingTypeOptions = [
   { value: 'standalone', label: 'Stand-alone housing', desc: 'A single, self-contained property on its own section. Best for applicants needing privacy or low-stimulus environments.' },
-  { value: 'complex_2_10', label: 'Housing complex (2\u201310 properties)', desc: 'A small cluster of homes. Suitable for people who can manage light neighbour contact.' },
-  { value: 'complex_11_20', label: 'Housing complex (11\u201320 properties)', desc: 'A medium-sized complex. Suitable for tenants comfortable with moderate community living.' },
+  { value: 'complex_2_10', label: 'Housing complex (2–10 properties)', desc: 'A small cluster of homes. Suitable for people who can manage light neighbour contact.' },
+  { value: 'complex_11_20', label: 'Housing complex (11–20 properties)', desc: 'A medium-sized complex. Suitable for tenants comfortable with moderate community living.' },
   { value: 'complex_20_plus', label: 'Housing complex (20+ properties)', desc: 'A large housing complex with high activity and frequent social interaction.' },
   { value: 'institutional', label: 'Institutional housing', desc: 'Specialised, staffed accommodation. Used when daily oversight or intensive support is needed.' },
 ];
+
+const houseSettingOptions = [
+  { value: 'standard', label: 'Standard property', desc: 'No specific accessibility modifications required.' },
+  { value: 'minor_adaptations', label: 'Minor adaptations', desc: 'Small modifications such as grab rails, lever taps, or improved lighting.' },
+  { value: 'wheelchair_accessible', label: 'Wheelchair accessible / ground floor', desc: 'Requires step-free access, wider doorways, and ground-floor living.' },
+  { value: 'purpose_built', label: 'Purpose-built accessible', desc: 'Fully adapted or purpose-built accessible property with specialist fittings.' },
+];
+
+function getRecommendedHouseSetting(accessibilityNeeds) {
+  const map = {
+    none: 'standard',
+    minor: 'minor_adaptations',
+    significant: 'wheelchair_accessible',
+    severe: 'purpose_built',
+  };
+  return map[accessibilityNeeds] || 'standard';
+}
 
 function getGrossRating(score) {
   if (score >= 13) return 'High';
@@ -64,6 +81,7 @@ export default function Part7Summary() {
   const overallRating = residualRating; // maps directly to Residual
 
   const recommendedTypes = getRecommendedHousingTypes(residualScore, p5.accessibilityNeeds);
+  const recommendedSetting = getRecommendedHouseSetting(p5.accessibilityNeeds);
 
   // Pre-populate support plan checkboxes from Part 4 Health & Wellbeing selections
   const physicalNeedsSupport = ['managed_chronic', 'multiple_poorly_managed', 'acute_hospital'].includes(p4.physicalHealth);
@@ -76,6 +94,8 @@ export default function Part7Summary() {
 
   const [data, setData] = useState({
     housingType: part.housingType || '',
+    houseSetting: part.houseSetting ?? recommendedSetting,
+    houseSettingNotes: part.houseSettingNotes || '',
     locationConsiderations: part.locationConsiderations || '',
     tenancySupportEnabled: part.tenancySupportEnabled || false,
     tenancySupport: part.tenancySupport || '',
@@ -287,6 +307,56 @@ export default function Part7Summary() {
                   </label>
                 );
               })}
+            </div>
+          </fieldset>
+
+          {/* House Setting */}
+          <fieldset className="mt-4">
+            <legend className="text-sm font-medium text-slate-300 mb-2">
+              House Setting <span className="text-red-500">*</span>
+              <span className="text-xs text-slate-500 ml-2">(based on Accessibility Needs in Part 5)</span>
+            </legend>
+            <div className="space-y-2">
+              {houseSettingOptions.map((opt) => {
+                const isRecommended = opt.value === recommendedSetting;
+                return (
+                  <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${
+                    data.houseSetting === opt.value
+                      ? 'border-cyan-500/40 bg-cyan-500/10'
+                      : isRecommended
+                        ? 'border-cyan-500/20 bg-cyan-500/5'
+                        : 'border-white/10 hover:bg-white/5'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="houseSetting"
+                      value={opt.value}
+                      checked={data.houseSetting === opt.value}
+                      onChange={(e) => update('houseSetting', e.target.value)}
+                      disabled={isLocked}
+                      className="w-4 h-4 text-cyan-400 mt-0.5"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-slate-300">{opt.label}</span>
+                      {isRecommended && (
+                        <span className="ml-2 text-xs bg-cyan-500/15 text-cyan-400 px-2 py-0.5 rounded">Recommended</span>
+                      )}
+                      <p className="text-xs text-slate-500 mt-1">{opt.desc}</p>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-slate-300 mb-1">House Setting Notes</label>
+              <textarea
+                value={data.houseSettingNotes}
+                onChange={(e) => update('houseSettingNotes', e.target.value)}
+                disabled={isLocked}
+                rows="2"
+                className="w-full px-3 py-2 rounded-lg input-glass"
+                placeholder="Any additional notes about house setting requirements or adaptations needed..."
+              />
             </div>
           </fieldset>
         </div>

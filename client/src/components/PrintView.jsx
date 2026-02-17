@@ -116,6 +116,13 @@ const housingTypeLabels = {
   institutional: 'Institutional housing',
 };
 
+const houseSettingLabels = {
+  standard: 'Standard property',
+  minor_adaptations: 'Minor adaptations',
+  wheelchair_accessible: 'Wheelchair accessible / ground floor',
+  purpose_built: 'Purpose-built accessible',
+};
+
 const recommendationLabels = {
   proceed_without_conditions: 'Proceed with housing allocation without conditions',
   proceed_with_conditions: 'Proceed with housing allocation with conditions',
@@ -319,6 +326,8 @@ export default function PrintView({ assessment }) {
 
           <table style={s.table}><tbody>
             <Row l="Housing Type" v={lbl(housingTypeLabels, p7.housingType)} />
+            <Row l="House Setting" v={lbl(houseSettingLabels, p7.houseSetting)} />
+            {p7.houseSettingNotes && <Row l="House Setting Notes" v={p7.houseSettingNotes} />}
             <Row l="Location" v={p7.locationConsiderations || 'Not specified'} />
             {p7.tenancySupportEnabled && <Row l="Tenancy Support" v={p7.tenancySupport || 'Enabled'} />}
             {p7.healthServicesEnabled && <Row l="Health Services" v={p7.healthServices || 'Enabled'} />}
