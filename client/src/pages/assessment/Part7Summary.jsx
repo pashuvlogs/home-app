@@ -3,7 +3,26 @@ import { useOutletContext, useNavigate } from 'react-router-dom';
 import { savePart } from '../../api/client';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import Tooltip from '../../components/Tooltip';
-import { Save, ArrowRight, ArrowLeft, AlertTriangle, Calculator } from 'lucide-react';
+import { Save, ArrowRight, ArrowLeft, AlertTriangle, Calculator, ChevronDown, ChevronUp } from 'lucide-react';
+
+// Label maps for Parts 2-6 selections
+const roughSleepingLabels = { housed_at_risk: 'Housed but at risk', episodic_under_3m: 'Episodic rough sleeping (<3 months)', chronic_3_12m: 'Chronic rough sleeping (3–12 months)', long_term_over_12m: 'Long-term rough sleeping (>12 months)', not_applicable: 'Not applicable' };
+const housingStatusLabels = { stable_temporary: 'Stable temporary accommodation', unstable_temporary: 'Unstable temporary accommodation', emergency_shelter: 'Emergency accommodation / shelter', overcrowding: 'Overcrowding', couch_surfing: 'Couch surfing', unsuitable_housing: 'Unsuitable housing' };
+const antiSocialLabels = { positive_history: 'Positive history / no previous tenancy', minor_resolved: 'Minor issues resolved', eviction_mitigating: 'Eviction(s) with mitigating factors', multiple_evictions: 'Multiple evictions', neighbour_disputes: 'Neighbour disputes' };
+const criminalLabels = { no_concerns: 'No concerns', historical_resolved: 'Historical, now resolved', intimidation_assault: 'Intimidation / assault', violence: 'Violence', drug_related: 'Drug related' };
+const gangLabels = { no_concerns: 'No concerns', historical_resolved: 'Historical, now resolved', recent_association: 'Recent gang association', gang_member: 'Gang member' };
+const thirdPartyLabels = { no_concerns: 'No concerns', historical_resolved: 'Historical, now resolved', potential_concern: 'Potential concern', known_concern: 'Known concern' };
+const propertyDamageLabels = { no_damage: 'No damage history', minor_resolved: 'Minor / one-off resolved', serious_repeated: 'Serious or repeated', damage_arrears: 'Damage arrears' };
+const rentLabels = { no_concerns: 'No concerns', rent_arrears: 'Rent arrears history' };
+const tenantResponsibilityLabels = { strong: 'Strong', moderate: 'Moderate', limited: 'Limited', no_capacity: 'No capacity currently' };
+const physicalHealthLabels = { no_significant: 'No significant needs', managed_chronic: 'Managed chronic condition', multiple_poorly_managed: 'Multiple / poorly managed', acute_hospital: 'Acute / hospital-level needs' };
+const mentalHealthLabels = { no_concerns: 'No concerns', diagnosed_stable: 'Diagnosed but stable', active_challenges: 'Active challenges', co_occurring: 'Co-occurring disorders' };
+const substanceAbuseLabels = { no_concerns: 'No concerns', diagnosed_stable: 'Diagnosed but stable', active_challenges: 'Active challenges', co_occurring: 'Co-occurring disorders' };
+const supportNetworkLabels = { strong: 'Strong support', moderate: 'Moderate support', minimal: 'Minimal support', none: 'No support' };
+const accessibilityLabels = { none: 'No accessibility needs', minor: 'Minor accessibility needs', significant: 'Significant accessibility needs', severe: 'Severe accessibility needs' };
+const culturalLabels = { strong: 'Strong connections — Essential location requirement', moderate: 'Moderate connections — Strong preference for certain locations', limited: 'Limited connections — General preference, but flexible', none: 'No connections — Fully flexible about location' };
+
+function lbl(map, value) { return value ? (map[value] || value) : null; }
 
 const housingTypeOptions = [
   { value: 'standalone', label: 'Stand-alone housing', desc: 'A single, self-contained property on its own section. Best for applicants needing privacy or low-stimulus environments.' },
@@ -65,6 +84,7 @@ export default function Part7Summary() {
   const p3 = assessment.formData?.part3 || {};
   const p4 = assessment.formData?.part4 || {};
   const p5 = assessment.formData?.part5 || {};
+  const p6 = assessment.formData?.part6 || {};
 
   // Auto-calculate scores from previous parts
   const housingNeedScore = p2.housingNeedScore || 0;
@@ -105,6 +125,7 @@ export default function Part7Summary() {
     communitySupports: part.communitySupports || '',
   });
   const [saving, setSaving] = useState(false);
+  const [showDetailedSummary, setShowDetailedSummary] = useState(true);
 
   function update(field, value) {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -245,6 +266,64 @@ export default function Part7Summary() {
               { rating: 'Medium', range: '4\u20138', meaning: 'Structured support plan' },
               { rating: 'High', range: '9+', meaning: 'Intensive/supervised' },
             ]} current={residualRating} />
+          </div>
+
+          {/* Detailed Selection Summary */}
+          <div className="mt-4 border border-white/10 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setShowDetailedSummary(!showDetailedSummary)}
+              className="w-full flex items-center justify-between p-3 bg-white/5 hover:bg-white/8 transition-colors text-left"
+            >
+              <span className="text-sm font-medium text-slate-300">Detailed Selection Summary (Parts 2–6)</span>
+              {showDetailedSummary ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+            </button>
+            {showDetailedSummary && (
+              <div className="p-4 space-y-4 text-sm">
+                {/* Part 2 */}
+                <SummarySection title="Part 2: Housing Need Urgency" score={housingNeedScore} rating={housingNeedRating} items={[
+                  { label: 'Rough Sleeping', value: lbl(roughSleepingLabels, p2.roughSleepingDuration), score: p2.categoryScores?.roughSleepingDuration },
+                  { label: 'Housing Status', value: lbl(housingStatusLabels, p2.currentHousingStatus), score: p2.categoryScores?.currentHousingStatus },
+                ]} notes={p2.sectionNotes} />
+
+                {/* Part 3 */}
+                <SummarySection title="Part 3: Tenancy Challenge" score={tenancyChallengeScore} items={[
+                  { label: 'Anti-Social Behaviour', value: lbl(antiSocialLabels, p3.antiSocialBehaviour), score: p3.categoryScores?.antiSocialBehaviour },
+                  { label: 'Criminal History', value: lbl(criminalLabels, p3.criminalHistory), score: p3.categoryScores?.criminalHistory },
+                  { label: 'Gang Affiliations', value: lbl(gangLabels, p3.gangAffiliations), score: p3.categoryScores?.gangAffiliations },
+                  { label: 'Third Party', value: lbl(thirdPartyLabels, p3.thirdPartyAssociation), score: p3.categoryScores?.thirdPartyAssociation },
+                  { label: 'Property Damage', value: lbl(propertyDamageLabels, p3.propertyDamage), score: p3.categoryScores?.propertyDamage },
+                  { label: 'Rent', value: lbl(rentLabels, p3.rent), score: p3.categoryScores?.rent },
+                  { label: 'Tenant Responsibility', value: lbl(tenantResponsibilityLabels, p3.tenantResponsibility), score: p3.categoryScores?.tenantResponsibility },
+                ]} notes={p3.sectionNotes} />
+
+                {/* Part 4 */}
+                <SummarySection title="Part 4: Health & Wellbeing" score={healthWellbeingScore} items={[
+                  { label: 'Physical Health', value: lbl(physicalHealthLabels, p4.physicalHealth), score: p4.categoryScores?.physicalHealth },
+                  { label: 'Mental Health', value: lbl(mentalHealthLabels, p4.mentalHealth), score: p4.categoryScores?.mentalHealth },
+                  { label: 'Substance Abuse', value: lbl(substanceAbuseLabels, p4.substanceAbuse), score: p4.categoryScores?.substanceAbuse },
+                ]} notes={p4.sectionNotes} />
+
+                {/* Part 5 */}
+                <SummarySection title="Part 5: Support Networks (Mitigation)" score={mitigationScore} isMitigation items={[
+                  { label: 'Support Network', value: lbl(supportNetworkLabels, p5.supportNetwork), score: p5.categoryScores?.supportNetwork },
+                  { label: 'Accessibility Needs', value: lbl(accessibilityLabels, p5.accessibilityNeeds), score: p5.categoryScores?.accessibilityNeeds },
+                  { label: 'Cultural/Community', value: lbl(culturalLabels, p5.culturalConnections), score: p5.categoryScores?.culturalConnections },
+                ]} notes={p5.sectionNotes} />
+
+                {/* Part 6 */}
+                {(p6.immediateNeeds || p6.strengthsResilience || p6.mitigatingFactors || p6.supportAgencies) && (
+                  <div className="border-t border-white/10 pt-3">
+                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Part 6: Additional Information</div>
+                    <div className="space-y-1.5">
+                      {p6.immediateNeeds && <div><span className="text-slate-500">Immediate Needs:</span> <span className="text-slate-300">{p6.immediateNeeds}</span></div>}
+                      {p6.strengthsResilience && <div><span className="text-slate-500">Strengths:</span> <span className="text-slate-300">{p6.strengthsResilience}</span></div>}
+                      {p6.mitigatingFactors && <div><span className="text-slate-500">Mitigating Factors:</span> <span className="text-slate-300">{p6.mitigatingFactors}</span></div>}
+                      {p6.supportAgencies && <div><span className="text-slate-500">Support Agencies:</span> <span className="text-slate-300">{p6.supportAgencies}</span></div>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -474,6 +553,58 @@ function CheckTextField({ label, placeholder, checked, onCheck, value, onChange,
           placeholder={checked ? placeholder : ''}
         />
       </div>
+    </div>
+  );
+}
+
+function SummarySection({ title, score, rating, items, notes, isMitigation }) {
+  return (
+    <div className="border-t border-white/10 pt-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{title}</div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+            isMitigation
+              ? (score < 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400')
+              : (score >= 9 ? 'bg-red-500/20 text-red-400' : score >= 4 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-emerald-500/20 text-emerald-400')
+          }`}>
+            Score: {score}
+          </span>
+          {rating && (
+            <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+              rating === 'High' ? 'bg-red-500/20 text-red-400' : rating === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-emerald-500/20 text-emerald-400'
+            }`}>
+              {rating}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-1">
+        {items.map((item, i) => (
+          item.value && (
+            <div key={i} className="flex items-center justify-between text-xs py-0.5">
+              <span className="text-slate-500">{item.label}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-300">{item.value}</span>
+                {item.score !== undefined && item.score !== null && (
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                    item.score > 0 ? 'bg-orange-500/15 text-orange-400'
+                      : item.score < 0 ? 'bg-emerald-500/15 text-emerald-400'
+                      : 'bg-slate-500/15 text-slate-500'
+                  }`}>
+                    {item.score > 0 ? '+' : ''}{item.score}
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        ))}
+      </div>
+      {notes && (
+        <div className="mt-1.5 text-xs text-slate-500 italic border-l-2 border-white/10 pl-2">
+          {notes}
+        </div>
+      )}
     </div>
   );
 }

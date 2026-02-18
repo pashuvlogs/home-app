@@ -5,11 +5,12 @@ import SearchBar from '../components/SearchBar';
 import {
   getAssessments, searchAssessments, createAssessment,
   approveAssessment, rejectAssessment, deferAssessment,
-  completeDeferral, deleteAssessment,
+  deleteAssessment, resubmitAssessment,
 } from '../api/client';
 import {
   Plus, Eye, ArrowRight, Trash2, CheckCircle, XCircle, Pause,
   Clock, FileText, AlertTriangle, BarChart3, BookOpen,
+  Info, Send,
 } from 'lucide-react';
 import ScoringGuide from '../components/ScoringGuide';
 
@@ -51,6 +52,9 @@ export default function Dashboard() {
   const [actionNotes, setActionNotes] = useState('');
   const [showScoringGuide, setShowScoringGuide] = useState(false);
   const [deferData, setDeferData] = useState({ reason: '', timeframe: '', actions: '', followUpDate: '' });
+  const [deleteReason, setDeleteReason] = useState('');
+  const [resubmitNotes, setResubmitNotes] = useState('');
+  const [actionError, setActionError] = useState('');
 
   useEffect(() => { loadAssessments(); }, []);
 
@@ -91,13 +95,15 @@ export default function Dashboard() {
   }
 
   async function handleApprove(id) {
+    setActionError('');
     try {
       await approveAssessment(id, actionNotes);
       setActionModal(null);
       setActionNotes('');
       loadAssessments();
     } catch (err) {
-      console.error('Approve failed:', err);
+      const msg = err.response?.data?.error || 'Approve failed';
+      setActionError(msg);
     }
   }
 
@@ -124,41 +130,72 @@ export default function Dashboard() {
     }
   }
 
-  async function handleCompleteDeferral(id) {
-    try {
-      await completeDeferral(id);
-      loadAssessments();
-    } catch (err) {
-      console.error('Complete deferral failed:', err);
+  async function handleDelete(id, isSeniorManagerDelete) {
+    if (isSeniorManagerDelete) {
+      // Senior manager delete uses the modal with reason
+      setActionError('');
+      if (!deleteReason.trim()) {
+        setActionError('Reason is required');
+        return;
+      }
+      try {
+        await deleteAssessment(id, deleteReason.trim());
+        setActionModal(null);
+        setDeleteReason('');
+        loadAssessments();
+      } catch (err) {
+        const msg = err.response?.data?.error || 'Delete failed';
+        setActionError(msg);
+      }
+    } else {
+      // Assessor deleting own draft
+      if (!confirm('Delete this draft assessment?')) return;
+      try {
+        await deleteAssessment(id);
+        loadAssessments();
+      } catch (err) {
+        console.error('Delete failed:', err);
+      }
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this draft assessment?')) return;
+  async function handleResubmit(id) {
+    setActionError('');
+    if (!resubmitNotes.trim()) {
+      setActionError('Please describe what was updated');
+      return;
+    }
     try {
-      await deleteAssessment(id);
+      await resubmitAssessment(id, resubmitNotes.trim());
+      setActionModal(null);
+      setResubmitNotes('');
       loadAssessments();
     } catch (err) {
-      console.error('Delete failed:', err);
+      const msg = err.response?.data?.error || 'Resubmit failed';
+      setActionError(msg);
     }
   }
 
-  const myDrafts = assessments.filter(a => a.status === 'draft' && a.assessorId === user.id).length;
-  const myPending = assessments.filter(a => ['pending_manager', 'pending_senior', 'submitted'].includes(a.status) && a.assessorId === user.id).length;
-  const myApproved = assessments.filter(a => a.status === 'approved' && a.assessorId === user.id).length;
-  const pendingMyApproval = assessments.filter(a =>
+  const activeAssessments = assessments.filter(a => !a.deletedAt);
+  const myDrafts = activeAssessments.filter(a => a.status === 'draft' && a.assessorId === user.id).length;
+  const myPending = activeAssessments.filter(a => ['pending_manager', 'pending_senior', 'submitted'].includes(a.status) && a.assessorId === user.id).length;
+  const myApproved = activeAssessments.filter(a => a.status === 'approved' && a.assessorId === user.id).length;
+  const pendingMyApproval = activeAssessments.filter(a =>
     (a.status === 'pending_manager' && hasRole('manager')) ||
     (a.status === 'pending_senior' && hasRole('senior_manager'))
   ).length;
-  const deferredCount = assessments.filter(a => a.status === 'deferred').length;
-  const overrideCount = assessments.filter(a => a.professionalJudgementOverride).length;
+  const deferredCount = activeAssessments.filter(a => a.status === 'deferred').length;
+  const overrideCount = activeAssessments.filter(a => a.professionalJudgementOverride).length;
 
-  const pendingApprovalList = assessments.filter(a =>
+  const pendingApprovalList = activeAssessments.filter(a =>
     (a.status === 'pending_manager' && hasRole('manager', 'senior_manager')) ||
     (a.status === 'pending_senior' && hasRole('senior_manager'))
   );
 
-  const deferredList = assessments.filter(a => a.status === 'deferred');
+  const deferredList = activeAssessments.filter(a => a.status === 'deferred');
+
+  // Deferred assessments for the current assessor (for resubmit)
+  const myDeferredList = activeAssessments.filter(a => a.status === 'deferred' && a.assessorId === user.id);
 
   return (
     <div className="space-y-6">
@@ -168,13 +205,13 @@ export default function Dashboard() {
             <StatCard title="My Drafts" value={myDrafts} icon={FileText} glowClass="glow-blue" iconColor="text-cyan-400" />
             <StatCard title="Pending Approval" value={myPending} icon={Clock} glowClass="glow-orange" iconColor="text-yellow-400" />
             <StatCard title="Approved" value={myApproved} icon={CheckCircle} glowClass="glow-green" iconColor="text-emerald-400" />
-            <StatCard title="Total" value={assessments.length} icon={BarChart3} glowClass="glow-purple" iconColor="text-purple-400" />
+            <StatCard title="Total" value={activeAssessments.length} icon={BarChart3} glowClass="glow-purple" iconColor="text-purple-400" />
           </>
         )}
         {hasRole('manager', 'senior_manager') && (
           <>
             <StatCard title="Pending My Approval" value={pendingMyApproval} icon={Clock} glowClass="glow-orange" iconColor="text-yellow-400" />
-            <StatCard title="Total Assessments" value={assessments.length} icon={BarChart3} glowClass="glow-blue" iconColor="text-cyan-400" />
+            <StatCard title="Total Assessments" value={activeAssessments.length} icon={BarChart3} glowClass="glow-blue" iconColor="text-cyan-400" />
             <StatCard title="Deferred" value={deferredCount} icon={Pause} glowClass="glow-purple" iconColor="text-purple-400" />
             <StatCard title="Overrides" value={overrideCount} icon={AlertTriangle} glowClass="glow-orange" iconColor="text-orange-400" />
           </>
@@ -193,6 +230,50 @@ export default function Dashboard() {
       </div>
 
       <SearchBar onSearch={handleSearch} showAssessorFilter={hasRole('manager', 'senior_manager')} />
+
+      {/* Assessor: Deferred assessments needing resubmission */}
+      {hasRole('assessor') && myDeferredList.length > 0 && (
+        <div className="glass rounded-xl overflow-hidden glow-purple">
+          <div className="px-5 py-3 border-b border-purple-500/20 bg-purple-500/5">
+            <h3 className="font-semibold text-purple-400 flex items-center gap-2">
+              <AlertTriangle size={18} /> Action Required: Deferred Assessments ({myDeferredList.length})
+            </h3>
+          </div>
+          <div className="divide-y divide-white/5">
+            {myDeferredList.map(a => (
+              <div key={a.id} className="px-5 py-3 hover:bg-white/3 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-slate-200">{a.applicantName}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors.deferred}`}>Deferred</span>
+                      {a.resubmittedAt && <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">Resubmitted</span>}
+                    </div>
+                    <div className="mt-1 space-y-0.5">
+                      <p className="text-sm text-slate-500">Reason: {a.deferralReason || 'Not specified'}</p>
+                      {a.deferralActions && <p className="text-sm text-slate-500">Required: {a.deferralActions}</p>}
+                      {a.deferralFollowUpDate && (
+                        <p className={`text-sm ${new Date(a.deferralFollowUpDate) <= new Date() ? 'text-red-400 font-medium' : 'text-slate-500'}`}>
+                          Follow-up: {a.deferralFollowUpDate}
+                          {new Date(a.deferralFollowUpDate) <= new Date() && ' (OVERDUE)'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => navigate(`/assessment/${a.id}/1`)} className="text-sm px-3 py-1.5 btn-ghost rounded-lg"><Eye size={14} className="inline mr-1" />Review</button>
+                    {!a.resubmittedAt && (
+                      <button onClick={() => { setActionModal({ type: 'resubmit', id: a.id, name: a.applicantName }); setActionError(''); }} className="text-sm px-3 py-1.5 btn-neon rounded-lg">
+                        <Send size={14} className="inline mr-1" />Resubmit
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {hasRole('manager', 'senior_manager') && pendingApprovalList.length > 0 && (
         <div className="glass rounded-xl overflow-hidden glow-orange">
@@ -215,7 +296,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => navigate(`/assessment/${a.id}/5`)} className="text-sm px-3 py-1.5 btn-ghost rounded-lg"><Eye size={14} className="inline mr-1" />View</button>
-                  <button onClick={() => setActionModal({ type: 'approve', id: a.id, name: a.applicantName })} className="text-sm px-3 py-1.5 btn-neon-green rounded-lg"><CheckCircle size={14} className="inline mr-1" />Approve</button>
+                  <button onClick={() => { setActionModal({ type: 'approve', id: a.id, name: a.applicantName }); setActionError(''); }} className="text-sm px-3 py-1.5 btn-neon-green rounded-lg"><CheckCircle size={14} className="inline mr-1" />Approve</button>
                   <button onClick={() => setActionModal({ type: 'reject', id: a.id, name: a.applicantName })} className="text-sm px-3 py-1.5 btn-neon-red rounded-lg"><XCircle size={14} className="inline mr-1" />Reject</button>
                   <button onClick={() => setActionModal({ type: 'defer', id: a.id, name: a.applicantName })} className="text-sm px-3 py-1.5 btn-neon-orange rounded-lg"><Pause size={14} className="inline mr-1" />Defer</button>
                 </div>
@@ -233,14 +314,32 @@ export default function Dashboard() {
           <div className="divide-y divide-white/5">
             {deferredList.map(a => (
               <div key={a.id} className="px-5 py-3 flex items-center justify-between hover:bg-white/3 transition-colors">
-                <div>
-                  <span className="font-medium text-slate-200">{a.applicantName}</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-slate-200">{a.applicantName}</span>
+                    {a.resubmittedAt && <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">Resubmitted</span>}
+                  </div>
                   <p className="text-sm text-slate-500">Reason: {a.deferralReason || 'Not specified'}</p>
-                  {a.deferralFollowUpDate && <p className="text-sm text-slate-500">Follow-up: {a.deferralFollowUpDate}</p>}
+                  {a.deferralFollowUpDate && (
+                    <p className={`text-sm ${new Date(a.deferralFollowUpDate) <= new Date() ? 'text-red-400 font-medium' : 'text-slate-500'}`}>
+                      Follow-up: {a.deferralFollowUpDate}
+                      {new Date(a.deferralFollowUpDate) <= new Date() && ' (OVERDUE)'}
+                    </p>
+                  )}
+                  {a.resubmittedAt && a.resubmissionNotes && (
+                    <p className="text-sm text-cyan-400 mt-1">Update notes: {a.resubmissionNotes}</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => navigate(`/assessment/${a.id}/5`)} className="text-sm px-3 py-1.5 btn-ghost rounded-lg">View</button>
-                  <button onClick={() => handleCompleteDeferral(a.id)} className="text-sm px-3 py-1.5 btn-neon-green rounded-lg">Complete Follow-up</button>
+                  {a.resubmittedAt ? (
+                    <>
+                      <button onClick={() => { setActionModal({ type: 'approve', id: a.id, name: a.applicantName }); setActionError(''); }} className="text-sm px-3 py-1.5 btn-neon-green rounded-lg"><CheckCircle size={14} className="inline mr-1" />Approve</button>
+                      <button onClick={() => setActionModal({ type: 'reject', id: a.id, name: a.applicantName })} className="text-sm px-3 py-1.5 btn-neon-red rounded-lg"><XCircle size={14} className="inline mr-1" />Reject</button>
+                    </>
+                  ) : (
+                    <span className="text-xs text-slate-500 italic">Awaiting assessor resubmission</span>
+                  )}
                 </div>
               </div>
             ))}
@@ -271,30 +370,89 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {assessments.map(a => (
-                  <tr key={a.id}>
-                    <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded-full ${statusColors[a.status]}`}>{statusLabels[a.status]}{a.status === 'draft' && a.lastSavedPart ? ` (Part ${a.lastSavedPart})` : ''}</span></td>
-                    <td className="px-4 py-3 font-medium text-slate-200">{a.applicantName}</td>
-                    <td className="px-4 py-3 text-slate-400">{a.assessor?.fullName}</td>
-                    <td className="px-4 py-3">{a.overallMatchChallenge && <span className={`text-xs px-2 py-1 rounded-full ${riskColors[a.overallMatchChallenge]}`}>{a.overallMatchChallenge}</span>}</td>
-                    <td className="px-4 py-3 text-slate-400">{new Date(a.createdAt).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 text-slate-500 text-xs">{a.lastSavedAt ? new Date(a.lastSavedAt).toLocaleString() : '-'}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        {a.status === 'draft' && a.assessorId === user.id ? (
-                          <>
-                            <button onClick={() => navigate(`/assessment/${a.id}/${a.lastSavedPart || 1}`)} className="text-cyan-400 hover:text-cyan-300 p-1" title="Continue"><ArrowRight size={16} /></button>
-                            <button onClick={() => handleDelete(a.id)} className="text-red-400 hover:text-red-300 p-1" title="Delete"><Trash2 size={16} /></button>
-                          </>
-                        ) : (
-                          <button onClick={() => navigate(`/assessment/${a.id}/5`)} className="text-cyan-400 hover:text-cyan-300 p-1" title="View"><Eye size={16} /></button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {assessments.map(a => {
+                  const isDeleted = !!a.deletedAt;
+                  const isDeferred = a.status === 'deferred';
+                  return (
+                    <tr key={a.id} className={isDeleted ? 'opacity-50' : ''}>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          {isDeleted ? (
+                            <span className="text-xs px-2 py-1 rounded-full bg-red-900/30 text-red-400 border border-red-800/40 line-through">Deleted</span>
+                          ) : (
+                            <span className={`text-xs px-2 py-1 rounded-full ${statusColors[a.status]}`}>
+                              {statusLabels[a.status]}{a.status === 'draft' && a.lastSavedPart ? ` (Part ${a.lastSavedPart})` : ''}
+                            </span>
+                          )}
+                          {isDeferred && a.resubmittedAt && !isDeleted && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">Resubmitted</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className={`px-4 py-3 font-medium ${isDeleted ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+                        {a.applicantName}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">{a.assessor?.fullName}</td>
+                      <td className="px-4 py-3">{a.overallMatchChallenge && <span className={`text-xs px-2 py-1 rounded-full ${riskColors[a.overallMatchChallenge]}`}>{a.overallMatchChallenge}</span>}</td>
+                      <td className="px-4 py-3 text-slate-400">{new Date(a.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-slate-500 text-xs">{a.lastSavedAt ? new Date(a.lastSavedAt).toLocaleString() : '-'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          {isDeleted ? (
+                            <button
+                              onClick={() => setActionModal({ type: 'viewDeleteReason', name: a.applicantName, reason: a.deletedReason, by: a.deleter?.fullName || 'Unknown', date: a.deletedAt })}
+                              className="text-red-400 hover:text-red-300 p-1" title="View deletion reason"
+                            >
+                              <Info size={16} />
+                            </button>
+                          ) : a.status === 'draft' && a.assessorId === user.id ? (
+                            <>
+                              <button onClick={() => navigate(`/assessment/${a.id}/${a.lastSavedPart || 1}`)} className="text-cyan-400 hover:text-cyan-300 p-1" title="Continue"><ArrowRight size={16} /></button>
+                              <button onClick={() => handleDelete(a.id, false)} className="text-red-400 hover:text-red-300 p-1" title="Delete"><Trash2 size={16} /></button>
+                            </>
+                          ) : (
+                            <>
+                              <button onClick={() => navigate(`/assessment/${a.id}/5`)} className="text-cyan-400 hover:text-cyan-300 p-1" title="View"><Eye size={16} /></button>
+                              {hasRole('senior_manager') && !isDeleted && (
+                                <button
+                                  onClick={() => { setActionModal({ type: 'delete', id: a.id, name: a.applicantName }); setDeleteReason(''); setActionError(''); }}
+                                  className="text-red-400 hover:text-red-300 p-1" title="Delete assessment"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+            {/* Reason details shown inline below table for rejected/deferred */}
+            {assessments.some(a => (a.status === 'rejected' && a.rejectionReason) || (a.status === 'deferred' && a.deferralReason)) && (
+              <div className="px-5 py-3 border-t border-white/5 space-y-2">
+                {assessments.filter(a => a.status === 'rejected' && a.rejectionReason && !a.deletedAt).map(a => (
+                  <div key={`rej-${a.id}`} className="flex items-start gap-2 text-xs">
+                    <XCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
+                    <span className="text-slate-400">
+                      <span className="font-medium text-red-400">{a.applicantName}</span> rejected: {a.rejectionReason}
+                    </span>
+                  </div>
+                ))}
+                {assessments.filter(a => a.status === 'deferred' && a.deferralReason && !a.deletedAt).map(a => (
+                  <div key={`def-${a.id}`} className="flex items-start gap-2 text-xs">
+                    <Pause size={14} className="text-purple-400 shrink-0 mt-0.5" />
+                    <span className="text-slate-400">
+                      <span className="font-medium text-purple-400">{a.applicantName}</span> deferred: {a.deferralReason}
+                      {a.deferralFollowUpDate && ` — Follow-up: ${a.deferralFollowUpDate}`}
+                      {a.resubmittedAt && <span className="text-cyan-400"> (Resubmitted)</span>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -313,8 +471,56 @@ export default function Dashboard() {
         </Modal>
       )}
 
-      {actionModal && (
-        <Modal onClose={() => { setActionModal(null); setActionNotes(''); setDeferData({ reason: '', timeframe: '', actions: '', followUpDate: '' }); }}>
+      {actionModal && actionModal.type === 'viewDeleteReason' && (
+        <Modal onClose={() => setActionModal(null)}>
+          <h3 className="text-lg font-semibold text-red-400 mb-2">Assessment Deleted</h3>
+          <p className="text-sm text-slate-300 mb-1">Applicant: {actionModal.name}</p>
+          <p className="text-sm text-slate-400 mb-1">Deleted by: {actionModal.by}</p>
+          <p className="text-sm text-slate-400 mb-3">Date: {new Date(actionModal.date).toLocaleString()}</p>
+          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 mb-4">
+            <p className="text-sm text-slate-300">Reason: {actionModal.reason || 'No reason provided'}</p>
+          </div>
+          <div className="flex justify-end">
+            <button onClick={() => setActionModal(null)} className="px-4 py-2 btn-ghost rounded-lg">Close</button>
+          </div>
+        </Modal>
+      )}
+
+      {actionModal && actionModal.type === 'delete' && (
+        <Modal onClose={() => { setActionModal(null); setDeleteReason(''); setActionError(''); }}>
+          <h3 className="text-lg font-semibold text-red-400 mb-2">Delete Assessment</h3>
+          <p className="text-sm text-slate-400 mb-4">Applicant: {actionModal.name}</p>
+          <p className="text-sm text-yellow-400 mb-3">This action cannot be undone. The assessment will be permanently archived.</p>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-400 mb-1">Reason for deletion *</label>
+            <textarea value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)} className="w-full px-3 py-2 rounded-lg input-glass" rows="3" placeholder="Explain why this assessment is being deleted..." required />
+          </div>
+          {actionError && <p className="text-sm text-red-400 mb-3">{actionError}</p>}
+          <div className="flex justify-end gap-2">
+            <button onClick={() => { setActionModal(null); setDeleteReason(''); setActionError(''); }} className="px-4 py-2 btn-ghost rounded-lg">Cancel</button>
+            <button onClick={() => handleDelete(actionModal.id, true)} className="px-4 py-2 btn-neon-red rounded-lg">Delete Assessment</button>
+          </div>
+        </Modal>
+      )}
+
+      {actionModal && actionModal.type === 'resubmit' && (
+        <Modal onClose={() => { setActionModal(null); setResubmitNotes(''); setActionError(''); }}>
+          <h3 className="text-lg font-semibold text-cyan-400 mb-2">Resubmit Assessment</h3>
+          <p className="text-sm text-slate-400 mb-4">Applicant: {actionModal.name}</p>
+          <p className="text-sm text-slate-300 mb-3">Describe what has been updated since the deferral:</p>
+          <div className="mb-4">
+            <textarea value={resubmitNotes} onChange={(e) => setResubmitNotes(e.target.value)} className="w-full px-3 py-2 rounded-lg input-glass" rows="4" placeholder="e.g., Updated support agency information, added external report..." required />
+          </div>
+          {actionError && <p className="text-sm text-red-400 mb-3">{actionError}</p>}
+          <div className="flex justify-end gap-2">
+            <button onClick={() => { setActionModal(null); setResubmitNotes(''); setActionError(''); }} className="px-4 py-2 btn-ghost rounded-lg">Cancel</button>
+            <button onClick={() => handleResubmit(actionModal.id)} className="px-4 py-2 btn-neon rounded-lg">Resubmit for Approval</button>
+          </div>
+        </Modal>
+      )}
+
+      {actionModal && ['approve', 'reject', 'defer'].includes(actionModal.type) && (
+        <Modal onClose={() => { setActionModal(null); setActionNotes(''); setActionError(''); setDeferData({ reason: '', timeframe: '', actions: '', followUpDate: '' }); }}>
           <h3 className="text-lg font-semibold text-slate-200 mb-2 capitalize">{actionModal.type} Assessment</h3>
           <p className="text-sm text-slate-400 mb-4">Applicant: {actionModal.name}</p>
           {actionModal.type === 'defer' && (
@@ -347,8 +553,9 @@ export default function Dashboard() {
             <label className="block text-sm font-medium text-slate-400 mb-1">Notes {actionModal.type === 'reject' ? '*' : '(optional)'}</label>
             <textarea value={actionNotes} onChange={(e) => setActionNotes(e.target.value)} className="w-full px-3 py-2 rounded-lg input-glass" rows="3" required={actionModal.type === 'reject'} />
           </div>
+          {actionError && <p className="text-sm text-red-400 mb-3">{actionError}</p>}
           <div className="flex justify-end gap-2">
-            <button onClick={() => { setActionModal(null); setActionNotes(''); }} className="px-4 py-2 btn-ghost rounded-lg">Cancel</button>
+            <button onClick={() => { setActionModal(null); setActionNotes(''); setActionError(''); }} className="px-4 py-2 btn-ghost rounded-lg">Cancel</button>
             <button
               onClick={() => { if (actionModal.type === 'approve') handleApprove(actionModal.id); else if (actionModal.type === 'reject') handleReject(actionModal.id); else if (actionModal.type === 'defer') handleDefer(actionModal.id); }}
               className={`px-4 py-2 rounded-lg ${actionModal.type === 'approve' ? 'btn-neon-green' : actionModal.type === 'reject' ? 'btn-neon-red' : 'btn-neon-orange'}`}

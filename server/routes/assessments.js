@@ -51,24 +51,26 @@ router.post('/', requireRole('assessor'), async (req, res) => {
   }
 });
 
-// List assessments (role-filtered)
+// List assessments (role-filtered, includes deleted/rejected with reasons)
 router.get('/', async (req, res) => {
   try {
-    const where = { deletedAt: null };
+    const where = {};
     const { role } = req.user;
 
     if (role === 'assessor') {
       where.assessorId = req.user.id;
-    } else if (role === 'manager') {
-      // Managers see their team's assessments + pending_manager
-    } else if (role === 'senior_manager') {
-      // Senior managers see all
     }
+    // Managers and senior managers see all
 
     const assessments = await Assessment.findAll({
       where,
-      include: [{ model: User, as: 'assessor', attributes: ['id', 'fullName', 'username'] }],
+      include: [
+        { model: User, as: 'assessor', attributes: ['id', 'fullName', 'username'] },
+        { model: User, as: 'approver', attributes: ['id', 'fullName', 'role'] },
+        { model: User, as: 'deleter', attributes: ['id', 'fullName'] },
+      ],
       order: [['updatedAt', 'DESC']],
+      paranoid: false, // Include soft-deleted assessments
     });
 
     res.json(assessments);
@@ -284,6 +286,11 @@ router.post('/:id/approve', requireRole('manager', 'senior_manager'), async (req
       return res.status(403).json({ error: 'Senior manager approval required' });
     }
 
+    // Block approval if assessment was deferred and not resubmitted by assessor
+    if (assessment.deferralReason && !assessment.resubmittedAt) {
+      return res.status(400).json({ error: 'This assessment was deferred and must be resubmitted by the assessor before it can be approved' });
+    }
+
     await assessment.update({
       status: 'approved',
       lockedAt: new Date(),
@@ -309,7 +316,11 @@ router.post('/:id/reject', requireRole('manager', 'senior_manager'), async (req,
     const assessment = await Assessment.findByPk(req.params.id);
     if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
 
-    await assessment.update({ status: 'rejected' });
+    await assessment.update({
+      status: 'rejected',
+      rejectionReason: req.body.notes || 'No reason provided',
+      rejectedBy: req.user.id,
+    });
     await audit(assessment.id, req.user.id, 'reject', { notes: req.body.notes });
 
     await notify(assessment.assessorId, assessment.id, 'rejection',
@@ -489,26 +500,129 @@ router.get('/:id/audit/export', async (req, res) => {
   }
 });
 
-// Soft delete draft
-router.delete('/:id', requireRole('assessor'), async (req, res) => {
+// Soft delete - assessors can delete their own drafts, senior managers can delete any with reason
+router.delete('/:id', async (req, res) => {
+  try {
+    const assessment = await Assessment.findByPk(req.params.id);
+    if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+    if (req.user.role === 'senior_manager') {
+      const { reason } = req.body || {};
+      if (!reason) {
+        return res.status(400).json({ error: 'Deletion reason is required' });
+      }
+      await assessment.update({ deletedReason: reason, deletedBy: req.user.id });
+      await assessment.destroy(); // paranoid soft delete
+      await audit(assessment.id, req.user.id, 'delete', { reason });
+
+      // Notify the assessor
+      await notify(assessment.assessorId, assessment.id, 'rejection',
+        `Assessment for ${assessment.applicantName} has been deleted by ${req.user.fullName}. Reason: ${reason}`);
+
+      res.json({ message: 'Assessment deleted' });
+    } else if (req.user.role === 'assessor') {
+      if (assessment.assessorId !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      if (assessment.status !== 'draft') {
+        return res.status(400).json({ error: 'Can only delete draft assessments' });
+      }
+      await assessment.destroy(); // paranoid soft delete
+      await audit(assessment.id, req.user.id, 'delete', {});
+      res.json({ message: 'Assessment deleted' });
+    } else {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+  } catch (err) {
+    console.error('Delete error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Resubmit deferred assessment (assessor only)
+router.post('/:id/resubmit', requireRole('assessor'), async (req, res) => {
   try {
     const assessment = await Assessment.findByPk(req.params.id);
     if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
 
     if (assessment.assessorId !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: 'Only the assessor can resubmit' });
     }
 
-    if (assessment.status !== 'draft') {
-      return res.status(400).json({ error: 'Can only delete draft assessments' });
+    if (assessment.status !== 'deferred') {
+      return res.status(400).json({ error: 'Can only resubmit deferred assessments' });
     }
 
-    await assessment.destroy(); // paranoid soft delete
-    await audit(assessment.id, req.user.id, 'delete', {});
+    const { notes } = req.body;
+    if (!notes) {
+      return res.status(400).json({ error: 'Resubmission notes are required (describe what was updated)' });
+    }
 
-    res.json({ message: 'Assessment deleted' });
+    // Determine approval pathway
+    const tenancyRisk = assessment.formData.part8?.tenancyRisk || assessment.overallMatchChallenge;
+    const newStatus = tenancyRisk === 'High' ? 'pending_senior' : 'pending_manager';
+
+    await assessment.update({
+      status: newStatus,
+      resubmittedAt: new Date(),
+      resubmissionNotes: notes,
+    });
+
+    await audit(assessment.id, req.user.id, 'resubmit', { notes });
+
+    // Notify appropriate approvers
+    if (newStatus === 'pending_manager') {
+      const managers = await User.findAll({ where: { role: 'manager' } });
+      for (const mgr of managers) {
+        await notify(mgr.id, assessment.id, 'submission',
+          `Assessment for ${assessment.applicantName} has been resubmitted by ${req.user.fullName} after deferral. Notes: ${notes}`);
+      }
+    } else {
+      const seniors = await User.findAll({ where: { role: 'senior_manager' } });
+      for (const sr of seniors) {
+        await notify(sr.id, assessment.id, 'submission',
+          `Assessment for ${assessment.applicantName} has been resubmitted by ${req.user.fullName} after deferral. Notes: ${notes}`);
+      }
+    }
+
+    res.json(assessment);
   } catch (err) {
-    console.error('Delete error:', err);
+    console.error('Resubmit error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Check follow-up reminders (called periodically)
+router.get('/reminders/check', async (req, res) => {
+  try {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    const deferred = await Assessment.findAll({
+      where: {
+        status: 'deferred',
+        deferralFollowUpDate: tomorrowStr,
+        deletedAt: null,
+      },
+    });
+
+    for (const a of deferred) {
+      // Notify assessor
+      await notify(a.assessorId, a.id, 'followup',
+        `Reminder: Follow-up for ${a.applicantName} is due tomorrow (${a.deferralFollowUpDate}). Reason: ${a.deferralReason || 'Not specified'}`);
+
+      // Notify managers
+      const managers = await User.findAll({ where: { role: ['manager', 'senior_manager'] } });
+      for (const mgr of managers) {
+        await notify(mgr.id, a.id, 'followup',
+          `Reminder: Follow-up for ${a.applicantName} is due tomorrow (${a.deferralFollowUpDate}).`);
+      }
+    }
+
+    res.json({ checked: deferred.length });
+  } catch (err) {
+    console.error('Reminder check error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

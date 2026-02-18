@@ -88,24 +88,24 @@ const substanceAbuseLabels = {
 };
 
 const supportNetworkLabels = {
-  strong: 'Strong support — active family/whānau/friends and/or engaged caseworker',
-  moderate: 'Moderate support — some connections or occasional service engagement',
-  minimal: 'Minimal support — limited connections, sporadic contact with services',
-  none: 'No support — completely isolated',
+  strong: 'Strong support',
+  moderate: 'Moderate support',
+  minimal: 'Minimal support',
+  none: 'No support',
 };
 
 const accessibilityLabels = {
   none: 'No accessibility needs',
-  minor: 'Minor accessibility needs — requires minor adaptations',
-  significant: 'Significant accessibility needs — requires wheelchair access, ground floor',
-  severe: 'Severe accessibility needs — requires purpose-built accessible housing',
+  minor: 'Minor accessibility needs',
+  significant: 'Significant accessibility needs',
+  severe: 'Severe accessibility needs',
 };
 
 const culturalLabels = {
-  strong: 'Strong connections — essential location requirement',
-  moderate: 'Moderate connections — strong preference for certain locations',
-  limited: 'Limited connections — general preference, flexible',
-  none: 'No connections — fully flexible about location',
+  strong: 'Strong connections — Essential location requirement',
+  moderate: 'Moderate connections — Strong preference for certain locations',
+  limited: 'Limited connections — General preference, but flexible',
+  none: 'No connections — Fully flexible about location',
 };
 
 const housingTypeLabels = {
@@ -182,13 +182,14 @@ export default function PrintView({ assessment }) {
               <th style={{ textAlign: 'left', padding: '8px 0', borderBottom: '2px solid #000', fontWeight: 'normal' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <strong style={{ fontSize: '14pt', color: '#000' }}>ACCOMMODATION APPLICANT MATCHING ASSESSMENT</strong>
-                    <br />
-                    <span style={{ fontSize: '9pt', color: '#555' }}>Version 1.0 — Integrated Scoring System</span>
+                    <div style={{ fontSize: '16pt', fontWeight: 'bold', color: '#000', letterSpacing: '1px' }}>H.O.M.E.</div>
+                    <div style={{ fontSize: '9pt', color: '#555', marginTop: '1px' }}>Housing Opportunity &amp; Matching Evaluation</div>
+                    <div style={{ fontSize: '12pt', fontWeight: 'bold', color: '#333', marginTop: '4px' }}>Applicant Matching Assessment</div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '9pt', color: '#555' }}>
                     <div>Applicant: <strong style={{ color: '#000' }}>{assessment.applicantName}</strong></div>
                     <div>Date: {p1.dateOfAssessment || 'N/A'}</div>
+                    <div style={{ marginTop: '2px', color: '#888' }}>Version 1.0</div>
                   </div>
                 </div>
               </th>
@@ -324,6 +325,47 @@ export default function PrintView({ assessment }) {
             <span style={{ fontSize: '13pt', fontWeight: 'bold' }}>{p7.overallMatchChallenge || assessment.overallMatchChallenge || 'N/A'}</span>
           </div>
 
+          {/* Detailed Selection Summary */}
+          <div style={{ marginBottom: '12px' }}>
+            <h3 style={{ fontSize: '11pt', fontWeight: 'bold', color: '#000', marginBottom: '8px', borderBottom: '1px solid #ccc', paddingBottom: '4px' }}>Detailed Selection Summary</h3>
+
+            <PrintSummaryBlock title="Part 2: Housing Need Urgency" rows={[
+              ['Rough Sleeping', lbl(roughSleepingLabels, p2.roughSleepingDuration)],
+              ['Housing Status', lbl(housingStatusLabels, p2.currentHousingStatus)],
+            ]} notes={p2.sectionNotes} s={s} />
+
+            <PrintSummaryBlock title="Part 3: Tenancy Challenge" rows={[
+              ['Anti-Social Behaviour', lbl(antiSocialLabels, p3.antiSocialBehaviour)],
+              ['Criminal History', lbl(criminalLabels, p3.criminalHistory)],
+              ['Gang Affiliations', lbl(gangLabels, p3.gangAffiliations)],
+              ['Third Party', lbl(thirdPartyLabels, p3.thirdPartyAssociation)],
+              ['Property Damage', lbl(propertyDamageLabels, p3.propertyDamage)],
+              ['Rent', lbl(rentLabels, p3.rent)],
+              ['Tenant Responsibility', lbl(tenantResponsibilityLabels, p3.tenantResponsibility)],
+            ]} notes={p3.sectionNotes} s={s} />
+
+            <PrintSummaryBlock title="Part 4: Health & Wellbeing" rows={[
+              ['Physical Health', lbl(physicalHealthLabels, p4.physicalHealth)],
+              ['Mental Health', lbl(mentalHealthLabels, p4.mentalHealth)],
+              ['Substance Abuse', lbl(substanceAbuseLabels, p4.substanceAbuse)],
+            ]} notes={p4.sectionNotes} s={s} />
+
+            <PrintSummaryBlock title="Part 5: Support Networks" rows={[
+              ['Support Network', lbl(supportNetworkLabels, p5.supportNetwork)],
+              ['Accessibility Needs', lbl(accessibilityLabels, p5.accessibilityNeeds)],
+              ['Cultural/Community', lbl(culturalLabels, p5.culturalConnections)],
+            ]} notes={p5.sectionNotes} s={s} />
+
+            {(p6.immediateNeeds || p6.strengthsResilience || p6.mitigatingFactors || p6.supportAgencies) && (
+              <PrintSummaryBlock title="Part 6: Additional Information" rows={[
+                p6.immediateNeeds && ['Immediate Needs', p6.immediateNeeds],
+                p6.strengthsResilience && ['Strengths', p6.strengthsResilience],
+                p6.mitigatingFactors && ['Mitigating Factors', p6.mitigatingFactors],
+                p6.supportAgencies && ['Support Agencies', p6.supportAgencies],
+              ].filter(Boolean)} s={s} />
+            )}
+          </div>
+
           <table style={s.table}><tbody>
             <Row l="Housing Type" v={lbl(housingTypeLabels, p7.housingType)} />
             <Row l="House Setting" v={lbl(houseSettingLabels, p7.houseSetting)} />
@@ -423,7 +465,7 @@ export default function PrintView({ assessment }) {
 
         {/* Footer */}
         <div style={{ borderTop: '2px solid #000', paddingTop: '6px', marginTop: '24px', fontSize: '8pt', color: '#666', display: 'flex', justifyContent: 'space-between' }}>
-          <span>Accommodation Applicant Matching Assessment — {assessment.applicantName}</span>
+          <span>H.O.M.E. — Applicant Matching Assessment — {assessment.applicantName}</span>
           <span>Generated: {new Date().toLocaleDateString('en-GB')}</span>
         </div>
 
@@ -431,6 +473,30 @@ export default function PrintView({ assessment }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function PrintSummaryBlock({ title, rows, notes, s }) {
+  return (
+    <div style={{ marginBottom: '8px' }}>
+      <div style={{ fontSize: '9pt', fontWeight: 'bold', color: '#333', marginBottom: '3px' }}>{title}</div>
+      <table style={{ ...s.table, fontSize: '9pt' }}><tbody>
+        {rows.map(([label, value], i) => (
+          value && (
+            <tr key={i}>
+              <td style={{ padding: '2px 8px', color: '#666', width: '160px', borderBottom: '1px solid #eee' }}>{label}</td>
+              <td style={{ padding: '2px 8px', color: '#000', borderBottom: '1px solid #eee' }}>{value}</td>
+            </tr>
+          )
+        ))}
+        {notes && (
+          <tr>
+            <td style={{ padding: '2px 8px', color: '#666', borderBottom: '1px solid #eee', fontStyle: 'italic' }}>Notes</td>
+            <td style={{ padding: '2px 8px', color: '#333', borderBottom: '1px solid #eee', fontStyle: 'italic' }}>{notes}</td>
+          </tr>
+        )}
+      </tbody></table>
     </div>
   );
 }

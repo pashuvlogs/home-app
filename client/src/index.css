@@ -434,8 +434,10 @@ input[type="checkbox"] {
   .print-view .print-header-repeat {
     display: table-header-group;
   }
+
 }
 
 .print-only {
   display: none;
 }
+

@@ -94,6 +94,30 @@ module.exports = (sequelize) => {
       type: DataTypes.DATE,
       allowNull: true,
     },
+    deletedReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    deletedBy: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    rejectionReason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    rejectedBy: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    resubmittedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    resubmissionNotes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
   }, {
     tableName: 'assessments',
     timestamps: true,

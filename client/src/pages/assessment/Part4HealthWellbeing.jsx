@@ -11,10 +11,10 @@ const categories = [
     label: 'Physical Health Needs',
     tip: 'Assess the applicant\'s physical health needs that may affect their capacity to manage a tenancy independently, such as mobility issues, chronic illness, or acute medical conditions.',
     options: [
-      { value: 'no_significant', label: 'No significant needs', score: 0 },
-      { value: 'managed_chronic', label: 'Managed chronic condition', score: 1 },
-      { value: 'multiple_poorly_managed', label: 'Multiple / poorly managed conditions', score: 2 },
-      { value: 'acute_hospital', label: 'Acute / hospital-level needs', score: 3 },
+      { value: 'no_significant', label: 'No significant needs', score: 0, help: 'Generally healthy, no ongoing medical conditions requiring regular treatment.' },
+      { value: 'managed_chronic', label: 'Managed chronic condition', score: 1, help: 'Chronic condition (diabetes, asthma, etc.) that is well-managed with treatment.' },
+      { value: 'multiple_poorly_managed', label: 'Multiple / poorly managed conditions', score: 2, help: 'Multiple health issues OR chronic condition not well-controlled.' },
+      { value: 'acute_hospital', label: 'Acute / hospital-level needs', score: 3, help: 'Serious health condition requiring frequent medical intervention.' },
     ],
   },
   {
@@ -22,10 +22,10 @@ const categories = [
     label: 'Mental Health',
     tip: 'Select the single best-fit option for mental health status.',
     options: [
-      { value: 'no_concerns', label: 'No concerns', score: 0 },
-      { value: 'diagnosed_stable', label: 'Diagnosed but stable', score: 1 },
-      { value: 'active_challenges', label: 'Active challenges', score: 2 },
-      { value: 'co_occurring', label: 'Co-occurring disorders', score: 3 },
+      { value: 'no_concerns', label: 'No concerns', score: 0, help: 'No mental health issues identified.' },
+      { value: 'diagnosed_stable', label: 'Diagnosed but stable', score: 1, help: 'Mental health diagnosis but actively engaged with services and stable.' },
+      { value: 'active_challenges', label: 'Active challenges', score: 2, help: 'Currently experiencing mental health challenges.' },
+      { value: 'co_occurring', label: 'Co-occurring disorders', score: 3, help: 'Mental health issues, OR other high-risk behaviours present.' },
     ],
   },
   {
@@ -33,10 +33,10 @@ const categories = [
     label: 'Substance Abuse',
     tip: 'Select the single best-fit option for substance abuse status.',
     options: [
-      { value: 'no_concerns', label: 'No concerns', score: 0 },
-      { value: 'diagnosed_stable', label: 'Diagnosed but stable', score: 1 },
-      { value: 'active_challenges', label: 'Active challenges', score: 3 },
-      { value: 'co_occurring', label: 'Co-occurring disorders', score: 3 },
+      { value: 'no_concerns', label: 'No concerns', score: 0, help: 'No substance-related issues identified.' },
+      { value: 'diagnosed_stable', label: 'Diagnosed but stable', score: 1, help: 'Known substance use condition that is well-managed with treatment or support.' },
+      { value: 'active_challenges', label: 'Active challenges', score: 3, help: 'Currently experiencing substance use difficulties affecting stability or behaviour.' },
+      { value: 'co_occurring', label: 'Co-occurring disorders', score: 3, help: 'Substance use combined with mental health issues or other high-risk behaviours.' },
     ],
   },
 ];
@@ -114,10 +114,10 @@ export default function Part4HealthWellbeing() {
             </legend>
             <div className="space-y-1">
               {cat.options.map((opt) => (
-                <label key={opt.value} className={`flex items-center justify-between p-2 rounded hover:bg-white/5 cursor-pointer ${
+                <label key={opt.value} className={`flex items-start justify-between p-2 rounded hover:bg-white/5 cursor-pointer ${
                   data[cat.key] === opt.value ? 'bg-white/5 ring-1 ring-cyan-500/30' : ''
                 }`}>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start gap-3">
                     <input
                       type="radio"
                       name={cat.key}
@@ -125,11 +125,14 @@ export default function Part4HealthWellbeing() {
                       checked={data[cat.key] === opt.value}
                       onChange={(e) => update(cat.key, e.target.value)}
                       disabled={isLocked}
-                      className="w-4 h-4 text-cyan-400"
+                      className="w-4 h-4 text-cyan-400 mt-0.5"
                     />
-                    <span className="text-sm text-slate-300">{opt.label}</span>
+                    <div>
+                      <span className="text-sm text-slate-300">{opt.label}</span>
+                      {opt.help && <p className="text-xs text-slate-500 mt-0.5">{opt.help}</p>}
+                    </div>
                   </div>
-                  <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+                  <span className={`text-xs font-mono px-2 py-0.5 rounded shrink-0 ml-2 ${
                     opt.score > 0 ? 'bg-orange-500/15 text-orange-400' : 'bg-slate-500/15 text-slate-500'
                   }`}>
                     +{opt.score}

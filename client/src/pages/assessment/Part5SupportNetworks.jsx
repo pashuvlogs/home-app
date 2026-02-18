@@ -11,10 +11,10 @@ const categories = [
     label: 'Support Network Strength',
     tip: 'Select the single best-fit option. These scores reduce the Gross Challenge Score.',
     options: [
-      { value: 'strong', label: 'Strong support — active family/whānau/friends AND/OR engaged caseworker', score: -3 },
-      { value: 'moderate', label: 'Moderate support — some family/friend connections OR occasional service engagement', score: -2 },
-      { value: 'minimal', label: 'Minimal support — limited connections, sporadic contact with services', score: -1 },
-      { value: 'none', label: 'No support — completely isolated, no family/friends/services engaged', score: 0 },
+      { value: 'strong', label: 'Strong support', score: -3, help: 'Active family, whanau, friends, AND/OR engaged with caseworker.' },
+      { value: 'moderate', label: 'Moderate support', score: -2, help: 'Some family/friend connections OR occasional service engagement.' },
+      { value: 'minimal', label: 'Minimal support', score: -1, help: 'Limited connections, sporadic contact with services.' },
+      { value: 'none', label: 'No support', score: 0, help: 'Completely isolated, no family/friends/services engaged.' },
     ],
   },
   {
@@ -22,10 +22,10 @@ const categories = [
     label: 'Accessibility Needs',
     tip: 'Fewer accessibility constraints mean more placement options and flexibility, which mitigates challenge. Greater needs narrow options but are addressed through property matching.',
     options: [
-      { value: 'none', label: 'No accessibility needs', score: -2 },
-      { value: 'minor', label: 'Minor accessibility needs — requires minor adaptations (handrails, ramps, etc.)', score: -1 },
-      { value: 'significant', label: 'Significant accessibility needs — requires wheelchair access, ground floor, modified bathroom', score: 0 },
-      { value: 'severe', label: 'Severe accessibility needs — requires purpose-built accessible housing OR proximity to specialised care', score: 0 },
+      { value: 'none', label: 'No accessibility needs', score: -2, help: 'No mobility or accessibility needs.' },
+      { value: 'minor', label: 'Minor accessibility needs', score: -1, help: 'Requires minor adaptations (handrails, ramps, etc.).' },
+      { value: 'significant', label: 'Significant accessibility needs', score: 0, help: 'Requires wheelchair access, ground floor, modified bathroom, etc.' },
+      { value: 'severe', label: 'Severe accessibility needs', score: 0, help: 'Requires purpose-built accessible housing OR proximity to specialised care.' },
     ],
   },
   {
@@ -33,10 +33,10 @@ const categories = [
     label: 'Cultural / Community Connections & Location Requirements',
     tip: 'Strong cultural/community connections increase placement stability.',
     options: [
-      { value: 'strong', label: 'Strong connections — Essential location requirement (marae links, caregiving, essential whānau support)', score: -2 },
-      { value: 'moderate', label: 'Moderate connections — Strong preference for certain locations (meaningful community ties)', score: -1 },
-      { value: 'limited', label: 'Limited connections — General preference, flexible', score: 0 },
-      { value: 'none', label: 'No connections — Fully flexible about location', score: 0 },
+      { value: 'strong', label: 'Strong connections — Essential location requirement', score: -2, help: 'Strong cultural, whanau, or community ties that require the applicant to live in a specific area (e.g. marae links, caregiving roles, essential whanau support).' },
+      { value: 'moderate', label: 'Moderate connections — Strong preference for certain locations', score: -1, help: 'Meaningful ties that make some areas preferable due to community support or participation, but not strictly essential.' },
+      { value: 'limited', label: 'Limited connections — General preference, but flexible', score: 0, help: 'Some links to community or whanau, but applicant can reasonably live across multiple areas.' },
+      { value: 'none', label: 'No connections — Fully flexible about location', score: 0, help: 'No cultural, whanau, or community links influencing placement; location can be based on availability.' },
     ],
   },
 ];
@@ -114,10 +114,10 @@ export default function Part5SupportNetworks() {
             </legend>
             <div className="space-y-1">
               {cat.options.map((opt) => (
-                <label key={opt.value} className={`flex items-center justify-between p-2 rounded hover:bg-white/5 cursor-pointer ${
+                <label key={opt.value} className={`flex items-start justify-between p-2 rounded hover:bg-white/5 cursor-pointer ${
                   data[cat.key] === opt.value ? 'bg-white/5 ring-1 ring-cyan-500/30' : ''
                 }`}>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start gap-3">
                     <input
                       type="radio"
                       name={cat.key}
@@ -125,11 +125,14 @@ export default function Part5SupportNetworks() {
                       checked={data[cat.key] === opt.value}
                       onChange={(e) => update(cat.key, e.target.value)}
                       disabled={isLocked}
-                      className="w-4 h-4 text-cyan-400"
+                      className="w-4 h-4 text-cyan-400 mt-0.5"
                     />
-                    <span className="text-sm text-slate-300">{opt.label}</span>
+                    <div>
+                      <span className="text-sm text-slate-300">{opt.label}</span>
+                      {opt.help && <p className="text-xs text-slate-500 mt-0.5">{opt.help}</p>}
+                    </div>
                   </div>
-                  <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+                  <span className={`text-xs font-mono px-2 py-0.5 rounded shrink-0 ml-2 ${
                     opt.score < 0 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-slate-500/15 text-slate-500'
                   }`}>
                     {opt.score}

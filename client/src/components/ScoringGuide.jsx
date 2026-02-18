@@ -152,9 +152,9 @@ const sections = [
         name: 'Accessibility Needs',
         options: [
           { label: 'No accessibility needs', score: -2 },
-          { label: 'Minor needs', score: -1 },
-          { label: 'Significant needs', score: 0 },
-          { label: 'Severe needs', score: 0 },
+          { label: 'Minor accessibility needs', score: -1 },
+          { label: 'Significant accessibility needs', score: 0 },
+          { label: 'Severe accessibility needs', score: 0 },
         ],
       },
       {
@@ -171,14 +171,14 @@ const sections = [
 ];
 
 const formulaSteps = [
-  { label: 'Housing Need Score', formula: 'Rough Sleeping + Housing Status', range: '0–7' },
-  { label: 'Gross Challenge Score', formula: 'Tenancy Challenge (Part 3) + Health & Wellbeing (Part 4)', range: '0–30+' },
+  { label: 'Housing Need Score', formula: 'Rough Sleeping (0–4) + Housing Status (0–3)', range: '0–7' },
+  { label: 'Gross Challenge Score', formula: 'Tenancy Challenge (Part 3) + Health & Wellbeing (Part 4)', range: '0–29' },
   { label: 'Total Mitigation', formula: 'Support Network + Accessibility + Cultural (Part 5)', range: '-7 to 0' },
-  { label: 'Residual Challenge Score', formula: 'Gross Challenge + Mitigation (min 0)', range: '0–30+' },
+  { label: 'Residual Challenge Score', formula: 'Gross Challenge + Mitigation (min 0)', range: '0–29' },
 ];
 
 const ratingThresholds = [
-  { measure: 'Housing Need', low: '0–3', medium: '4–6', high: '7–10' },
+  { measure: 'Housing Need', low: '0–3', medium: '4–6', high: '7+' },
   { measure: 'Gross Challenge', low: '0–5', medium: '6–12', high: '13+' },
   { measure: 'Residual Challenge', low: '0–3', medium: '4–8', high: '9+' },
 ];
@@ -196,6 +196,106 @@ const approvalPathways = [
   { rating: 'High', approval: 'Senior Manager Approval Required' },
 ];
 
+function buildPrintHTML() {
+  const scoreColor = (s) =>
+    s > 0 ? 'background:#fff3e0;color:#e65100;' : s < 0 ? 'background:#e8f5e9;color:#2e7d32;' : 'background:#f5f5f5;color:#888;';
+
+  let html = `<!DOCTYPE html><html><head><title>H.O.M.E. Scoring Guide</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color:#222; padding:20px; font-size:10pt; }
+  .header { text-align:center; border-bottom:2px solid #333; padding-bottom:12px; margin-bottom:16px; }
+  .header h1 { font-size:18pt; letter-spacing:2px; margin-bottom:2px; }
+  .header p { font-size:10pt; color:#555; }
+  h2 { font-size:11pt; margin:14px 0 6px; color:#111; }
+  h3 { font-size:10pt; margin:10px 0 4px; color:#333; }
+  .desc { font-size:8pt; color:#666; margin-bottom:6px; }
+  .box { border:1px solid #ccc; border-radius:4px; padding:10px; margin-bottom:10px; background:#fafafa; }
+  .cat { margin-bottom:8px; }
+  .cat-name { font-weight:600; font-size:9pt; margin-bottom:3px; }
+  .opt { display:flex; justify-content:space-between; align-items:center; padding:2px 0; font-size:9pt; }
+  .score { font-family:monospace; font-size:8pt; padding:1px 6px; border-radius:3px; }
+  table { width:100%; border-collapse:collapse; margin:6px 0; font-size:9pt; }
+  th, td { border:1px solid #ccc; padding:4px 8px; text-align:left; }
+  th { background:#f0f0f0; font-weight:600; }
+  .low { color:#2e7d32; }
+  .med { color:#e65100; }
+  .high { color:#c62828; }
+  .formula-row { display:flex; align-items:center; gap:8px; padding:2px 0; font-size:9pt; }
+  .formula-label { font-weight:600; width:180px; }
+  .formula-range { font-family:monospace; font-size:8pt; color:#666; }
+  .threshold { font-size:8pt; color:#555; padding:1px 0; }
+  @media print { body { padding:0; } @page { margin: 15mm; } }
+</style></head><body>`;
+
+  html += `<div class="header"><h1>H.O.M.E.</h1><p>Housing Opportunity &amp; Matching Evaluation — Scoring Guide</p></div>`;
+
+  // Formula
+  html += `<h2>Score Calculation Formula</h2><div class="box">`;
+  for (const s of formulaSteps) {
+    html += `<div class="formula-row"><span class="formula-label">${s.label}</span><span>=</span><span style="flex:1">${s.formula}</span><span class="formula-range">(${s.range})</span></div>`;
+  }
+  html += `</div>`;
+
+  // Rating thresholds
+  html += `<h2>Rating Thresholds</h2><table><thead><tr><th>Measure</th><th class="low">Low</th><th class="med">Medium</th><th class="high">High</th></tr></thead><tbody>`;
+  for (const r of ratingThresholds) {
+    html += `<tr><td style="font-weight:600">${r.measure}</td><td style="text-align:center;font-family:monospace">${r.low}</td><td style="text-align:center;font-family:monospace">${r.medium}</td><td style="text-align:center;font-family:monospace">${r.high}</td></tr>`;
+  }
+  html += `</tbody></table>`;
+
+  // Sections
+  for (const sec of sections) {
+    html += `<h2>${sec.title}</h2><p class="desc">${sec.description}</p>`;
+    for (const cat of sec.categories) {
+      html += `<div class="cat"><div class="cat-name">${cat.name}</div>`;
+      for (const opt of cat.options) {
+        html += `<div class="opt"><span>${opt.label}</span><span class="score" style="${scoreColor(opt.score)}">${opt.score > 0 ? '+' : ''}${opt.score}</span></div>`;
+      }
+      html += `</div>`;
+    }
+    if (sec.thresholds) {
+      html += `<div style="margin-top:4px">`;
+      for (const t of sec.thresholds) {
+        html += `<div class="threshold"><strong>${t.rating}</strong> (${t.range}): ${t.meaning}</div>`;
+      }
+      html += `</div>`;
+    }
+  }
+
+  // Property recommendations
+  html += `<h2>Property Type Recommendation</h2><table><thead><tr><th>Residual Rating</th><th>Recommended Housing</th></tr></thead><tbody>`;
+  for (const r of propertyRecommendations) {
+    html += `<tr><td style="font-weight:600">${r.rating}</td><td>${r.types}</td></tr>`;
+  }
+  html += `</tbody></table>`;
+
+  // Approval pathways
+  html += `<h2>Approval Pathways</h2><table><thead><tr><th>Final Rating</th><th>Approval Required</th></tr></thead><tbody>`;
+  for (const r of approvalPathways) {
+    html += `<tr><td style="font-weight:600">${r.rating}</td><td>${r.approval}</td></tr>`;
+  }
+  html += `</tbody></table>`;
+
+  html += `</body></html>`;
+  return html;
+}
+
+function handlePrint() {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+  printWindow.document.write(buildPrintHTML());
+  printWindow.document.close();
+  printWindow.onload = () => {
+    printWindow.print();
+    printWindow.close();
+  };
+  // Fallback if onload doesn't fire (some browsers)
+  setTimeout(() => {
+    try { printWindow.print(); printWindow.close(); } catch {}
+  }, 500);
+}
+
 export default function ScoringGuide({ onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm overflow-y-auto py-8" onClick={onClose}>
@@ -204,7 +304,7 @@ export default function ScoringGuide({ onClose }) {
           <h2 className="text-xl font-bold text-slate-200">Scoring Guide</h2>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => window.print()}
+              onClick={handlePrint}
               className="flex items-center gap-1 px-3 py-1.5 text-sm btn-ghost rounded-lg no-print"
             >
               <Printer size={14} /> Print

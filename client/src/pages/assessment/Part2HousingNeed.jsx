@@ -6,20 +6,20 @@ import Tooltip from '../../components/Tooltip';
 import { Save, ArrowRight, ArrowLeft, Info } from 'lucide-react';
 
 const roughSleepingOptions = [
-  { value: 'housed_at_risk', label: 'Housed but at risk', score: 1 },
-  { value: 'episodic_under_3m', label: 'Episodic rough sleeping <3 months', score: 2 },
-  { value: 'chronic_3_12m', label: 'Chronic rough sleeping 3–12 months', score: 3 },
-  { value: 'long_term_over_12m', label: 'Long-term rough sleeping >12 months', score: 4 },
+  { value: 'housed_at_risk', label: 'Housed but at risk', score: 1, help: 'Currently housed but facing potential loss. E.g. living with family but relationship breakdown imminent, temporary accommodation ending soon, notice to vacate received.' },
+  { value: 'episodic_under_3m', label: 'Episodic rough sleeping <3 months', score: 2, help: 'Intermittent periods of sleeping rough, total duration less than 3 months. E.g. occasional nights on streets, moving between couch surfing and rough sleeping, short-term homelessness.' },
+  { value: 'chronic_3_12m', label: 'Chronic rough sleeping 3–12 months', score: 3, help: 'Continuous or frequent rough sleeping for 3–12 months. E.g. continuously or frequently living in car, sleeping in parks, streets.' },
+  { value: 'long_term_over_12m', label: 'Long-term rough sleeping >12 months', score: 4, help: 'Sleeping rough for more than 12 months continuously.' },
   { value: 'not_applicable', label: 'Not Applicable', score: 0 },
 ];
 
 const housingStatusOptions = [
-  { value: 'stable_temporary', label: 'Stable temporary accommodation', score: 1 },
-  { value: 'unstable_temporary', label: 'Unstable temporary accommodation', score: 2 },
-  { value: 'emergency_shelter', label: 'Emergency accommodation / shelter', score: 3 },
-  { value: 'overcrowding', label: 'Overcrowding', score: 2 },
-  { value: 'couch_surfing', label: 'Couch surfing', score: 3 },
-  { value: 'unsuitable_housing', label: 'Unsuitable housing', score: 2 },
+  { value: 'stable_temporary', label: 'Stable temporary accommodation', score: 1, help: 'Staying with family/friends with no immediate risk of loss.' },
+  { value: 'unstable_temporary', label: 'Unstable temporary accommodation', score: 2, help: 'Short-term arrangements with uncertain duration. E.g. moving between friends weekly, tenuous family arrangements.' },
+  { value: 'emergency_shelter', label: 'Emergency accommodation / shelter', score: 3, help: 'In emergency housing, night shelter, or motel.' },
+  { value: 'overcrowding', label: 'Overcrowding', score: 2, help: 'Living with too many people in shared sleeping areas, or unsuitable living conditions.' },
+  { value: 'couch_surfing', label: 'Couch surfing', score: 3, help: 'Staying temporarily with people without secure tenure. Often rotating between households without a stable place to stay.' },
+  { value: 'unsuitable_housing', label: 'Unsuitable housing', score: 2, help: 'Accommodation that does not meet basic needs due to safety issues, poor condition, accessibility barriers, or being inappropriate.' },
 ];
 
 function getHousingNeedRating(score) {
@@ -99,10 +99,10 @@ export default function Part2HousingNeed() {
           </legend>
           <div className="space-y-2">
             {roughSleepingOptions.map((opt) => (
-              <label key={opt.value} className={`flex items-center justify-between p-2 rounded hover:bg-white/5 cursor-pointer ${
+              <label key={opt.value} className={`flex items-start justify-between p-2 rounded hover:bg-white/5 cursor-pointer ${
                 data.roughSleepingDuration === opt.value ? 'bg-white/5 ring-1 ring-cyan-500/30' : ''
               }`}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <input
                     type="radio"
                     name="roughSleeping"
@@ -110,11 +110,14 @@ export default function Part2HousingNeed() {
                     checked={data.roughSleepingDuration === opt.value}
                     onChange={(e) => update('roughSleepingDuration', e.target.value)}
                     disabled={isLocked}
-                    className="w-4 h-4 text-cyan-400"
+                    className="w-4 h-4 text-cyan-400 mt-0.5"
                   />
-                  <span className="text-sm text-slate-300">{opt.label}</span>
+                  <div>
+                    <span className="text-sm text-slate-300">{opt.label}</span>
+                    {opt.help && <p className="text-xs text-slate-500 mt-0.5">{opt.help}</p>}
+                  </div>
                 </div>
-                <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+                <span className={`text-xs font-mono px-2 py-0.5 rounded shrink-0 ml-2 ${
                   opt.score > 0 ? 'bg-orange-500/15 text-orange-400' : 'bg-slate-500/15 text-slate-500'
                 }`}>
                   +{opt.score}
@@ -132,10 +135,10 @@ export default function Part2HousingNeed() {
           </legend>
           <div className="space-y-2">
             {housingStatusOptions.map((opt) => (
-              <label key={opt.value} className={`flex items-center justify-between p-2 rounded hover:bg-white/5 cursor-pointer ${
+              <label key={opt.value} className={`flex items-start justify-between p-2 rounded hover:bg-white/5 cursor-pointer ${
                 data.currentHousingStatus === opt.value ? 'bg-white/5 ring-1 ring-cyan-500/30' : ''
               }`}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <input
                     type="radio"
                     name="housingStatus"
@@ -143,11 +146,14 @@ export default function Part2HousingNeed() {
                     checked={data.currentHousingStatus === opt.value}
                     onChange={(e) => update('currentHousingStatus', e.target.value)}
                     disabled={isLocked}
-                    className="w-4 h-4 text-cyan-400"
+                    className="w-4 h-4 text-cyan-400 mt-0.5"
                   />
-                  <span className="text-sm text-slate-300">{opt.label}</span>
+                  <div>
+                    <span className="text-sm text-slate-300">{opt.label}</span>
+                    {opt.help && <p className="text-xs text-slate-500 mt-0.5">{opt.help}</p>}
+                  </div>
                 </div>
-                <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+                <span className={`text-xs font-mono px-2 py-0.5 rounded shrink-0 ml-2 ${
                   opt.score > 0 ? 'bg-orange-500/15 text-orange-400' : 'bg-slate-500/15 text-slate-500'
                 }`}>
                   +{opt.score}

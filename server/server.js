@@ -3,7 +3,8 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-const { sequelize } = require('./models');
+const { Op } = require('sequelize');
+const { sequelize, Assessment, Notification, User } = require('./models');
 const { seedUsers } = require('./seeders/seed');
 
 const authRoutes = require('./routes/auth');
@@ -48,6 +49,47 @@ async function start() {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
+
+    // Check for follow-up reminders every hour
+    setInterval(async () => {
+      try {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+        const deferred = await Assessment.findAll({
+          where: { status: 'deferred', deferralFollowUpDate: tomorrowStr, deletedAt: null },
+        });
+
+        for (const a of deferred) {
+          // Check if we already sent a reminder today
+          const existing = await Notification.findOne({
+            where: {
+              assessmentId: a.id,
+              type: 'followup',
+              createdAt: { [Op.gte]: new Date(new Date().toISOString().split('T')[0]) },
+            },
+          });
+          if (existing) continue;
+
+          await Notification.create({
+            userId: a.assessorId, assessmentId: a.id, type: 'followup',
+            message: `Reminder: Follow-up for ${a.applicantName} is due tomorrow (${a.deferralFollowUpDate}). Reason: ${a.deferralReason || 'Not specified'}`,
+          });
+
+          const mgrs = await User.findAll({ where: { role: ['manager', 'senior_manager'] } });
+          for (const m of mgrs) {
+            await Notification.create({
+              userId: m.id, assessmentId: a.id, type: 'followup',
+              message: `Reminder: Follow-up for ${a.applicantName} is due tomorrow (${a.deferralFollowUpDate}).`,
+            });
+          }
+        }
+        if (deferred.length > 0) console.log(`Sent follow-up reminders for ${deferred.length} assessments`);
+      } catch (err) {
+        console.error('Follow-up reminder check error:', err);
+      }
+    }, 60 * 60 * 1000); // Every hour
   } catch (err) {
     console.error('Failed to start server:', err);
     process.exit(1);

@@ -50,6 +50,13 @@ export default function AssessmentLayout() {
 
   useEffect(() => { loadAssessment(); }, [id]);
 
+  // When assessment is approved/locked, redirect to Part 8 (Approval) on initial load
+  useEffect(() => {
+    if (assessment && assessment.lockedAt && currentPart !== 8) {
+      navigate(`/assessment/${id}/8`, { replace: true });
+    }
+  }, [assessment?.lockedAt, id]);
+
   async function loadAssessment() {
     setLoading(true);
     try {

@@ -55,8 +55,10 @@ export const overrideAssessment = (id, data) =>
   api.post(`/assessments/${id}/override`, data);
 export const getAuditTrail = (id, action) =>
   api.get(`/assessments/${id}/audit`, { params: { action } });
-export const deleteAssessment = (id) =>
-  api.delete(`/assessments/${id}`);
+export const deleteAssessment = (id, reason) =>
+  api.delete(`/assessments/${id}`, { data: { reason } });
+export const resubmitAssessment = (id, notes) =>
+  api.post(`/assessments/${id}/resubmit`, { notes });
 
 // Reports
 export const getReportSummary = () => api.get('/reports/summary');
