@@ -40,7 +40,7 @@ async function start() {
     await sequelize.authenticate();
     console.log('Database connected');
 
-    await sequelize.sync({ force: true }); // ONE-TIME: drop & recreate tables, revert to alter after deploy
+    await sequelize.sync({ alter: true });
     console.log('Database synced');
 
     await seedUsers();
